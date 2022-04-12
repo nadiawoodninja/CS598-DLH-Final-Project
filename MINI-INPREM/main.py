@@ -100,6 +100,7 @@ def main(opts):
     os.environ['CUDA_VISIBLE_DEVICES'] = opts.gpu_devices
     # TODO: Load dataset
 
+
     '''Define the model.'''
     net = Inprem(opts.task, input_dim, 2, opts.emb_dim,
                  max(train_set.max_visit, valid_set.max_visit, test_set.max_visit),
