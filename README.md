@@ -1,4 +1,4 @@
-# CS598DLHFinalProject
+# CS598 DLH Final Project
 
 Python version: Python3
 IDE: Visual Studio Code
