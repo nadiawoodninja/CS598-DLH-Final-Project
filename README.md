@@ -27,5 +27,5 @@ Diabetes Disease : https://archive.ics.uci.edu/ml/datasets/Diabetes
 Kidney Disease : https://archive.ics.uci.edu/ml/datasets/Chronic_Kidney_Disease
 
 ## MIMIC III Demo Dataset
-We used these instructions to access the MIMIC III demo data: https://mimic.mit.edu/docs/gettingstarted/cloud/bigquery/
+We used these instructions to access the MIMIC III demo data: https://mimic.mit.edu/docs/gettingstarted/cloud/bigquery/ <br>
 `SELECT  * FROM `physionet-data.mimiciii_demo.admissions` `
