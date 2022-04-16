@@ -22,8 +22,8 @@ We used UC Irvine Machine Learning Repository to acquire our datasets needed for
 
 ### Here are the datasets that we used from the repository
 
-Heart Disease: https://archive.ics.uci.edu/ml/datasets/Heart+Disease
-Diabetes Disease : https://archive.ics.uci.edu/ml/datasets/Diabetes
+Heart Disease: https://archive.ics.uci.edu/ml/datasets/Heart+Disease <br>
+Diabetes Disease : https://archive.ics.uci.edu/ml/datasets/Diabetes <br>
 Kidney Disease : https://archive.ics.uci.edu/ml/datasets/Chronic_Kidney_Disease
 
 ## MIMIC III Demo Dataset
