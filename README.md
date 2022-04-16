@@ -16,7 +16,13 @@ We used Visual Studio Code to import the project into and then proceeded to inst
 
 Once the dependencies are installed run the code by executing this
 <br>
-`python3 main.py`
+`python3 main.py task=['diagnoses', 'heart', 'diabetes', 'kidney']
+                    emb_dim=256
+                    d_k=256
+                    d_v=256
+                    d_inner=256
+                    use_cuda=False (unless we are using a GPU, in that case need to include gpu_devices too)
+                    optimizer=Adam`
 
 <br>
 If you plan to use GPU computation, install CUDA: https://developer.nvidia.com/cuda-downloads
