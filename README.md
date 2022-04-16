@@ -21,7 +21,7 @@ Once the dependencies are installed run the code by executing this
                     d_k=256
                     d_v=256
                     d_inner=256
-                    use_cuda=False (unless we are using a GPU, in that case need to include gpu_devices too)
+                    use_cuda=False
                     optimizer=Adam`
 
 <br>
