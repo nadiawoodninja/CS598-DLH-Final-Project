@@ -112,8 +112,9 @@ class InpremData(Dataset):
         return len(self.x)
     
     def __getitem__(self, index):
-        mask = torch.zeros( (3, 5) )
-        return (self.x[index], mask, self.y[index])
+        return (self.x[index], self.x[index], self.y[index])
+        #mask = torch.zeros( (3, 5) )
+        #return (self.x[index], mask, self.y[index])
 
 def main(opts):
     os.environ['CUDA_VISIBLE_DEVICES'] = opts.gpu_devices
@@ -131,6 +132,9 @@ def main(opts):
     max_visits = heart_data_by_subject['CHARTDATE'].max()
 
     data = torch.zeros( (heart_data_by_subject.shape[0], codes.shape[0], max_visits) )
+    data = torch.zeros( (heart_data_by_subject.shape[0], 3, max_visits) )
+    data = torch.zeros( (heart_data_by_subject.shape[0], 34, 2) )
+    print('data.shape')
     print(data.shape)
 
     disease_status_by_subject = torch.zeros( (heart_data_by_subject.shape[0], 1) )
@@ -196,7 +200,16 @@ def main(opts):
     want it, next would be training etc, I have added notes about that under that TO DO
     '''
 
-
+    # 2x34 and 2x128
+    print(input_dim) # Based on data
+    print(max(train_set.max_visit, valid_set.max_visit, test_set.max_visit)) # Based on data
+    # Note: out_dim = 2
+    print(opts.emb_dim) # 128
+    print(opts.n_depth) # 2
+    print(opts.n_head) # 2
+    print(opts.d_k) # 128
+    print(opts.d_v) # 128
+    print('---')
     '''Define the model.'''
     net = Inprem(opts.task, input_dim, 2, opts.emb_dim,
                  max(train_set.max_visit, valid_set.max_visit, test_set.max_visit),
