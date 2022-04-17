@@ -11,7 +11,9 @@ import torch.nn.functional as F
 from .layers import EncoderLayer
 from .modules import MC_dropout
 import numpy as np
-import torchsparseattn
+#from torchsparseattn import Fusedmax
+from .sparseattn.fused_max import Fusedmax
+
 from doctor.sparsemax import Sparsemax
 
 def get_attn_key_pad_mask(seq_q, mask):
@@ -35,9 +37,11 @@ def mask_softmax(x, mask):
 
 def sparsemax(x, mask):
     x = x.cpu()
-    fusedmax = torchsparseattn.Fusedmax(alpha=.2)
+    #fusedmax = torchsparseattn.Fusedmax(alpha=.2)
+    fusedmax = Fusedmax(alpha=.2)
     mask = torch.sum(mask.squeeze(2), 1).long()
-    return fusedmax(x.squeeze(2), mask.unsqueeze(1)).unsqueeze(2).cuda()
+    #return fusedmax(x.squeeze(2), mask.unsqueeze(1)).unsqueeze(2).cuda()
+    return fusedmax(x.squeeze(2), mask.unsqueeze(1)).unsqueeze(2)
 
 
 class Encoder(nn.Module):
@@ -151,9 +155,13 @@ class Inprem(nn.Module):
             alpha_ = []
             for i, item in enumerate(alpha):
                 if int(length[i]) < mask.shape[1]:
+                    #alpha_.append(torch.cat(
+                    #    (self.sparsemax(item[:int(length[i])].squeeze(1).unsqueeze(0)),
+                    #     torch.zeros(1, mask.shape[1]-int(length[i])).float().cuda()), dim=1)
+                    #)
                     alpha_.append(torch.cat(
                         (self.sparsemax(item[:int(length[i])].squeeze(1).unsqueeze(0)),
-                         torch.zeros(1, mask.shape[1]-int(length[i])).float().cuda()), dim=1)
+                         torch.zeros(1, mask.shape[1]-int(length[i])).float()), dim=1)
                     )
                 else:
                     alpha_.append(self.sparsemax(item[:int(length[i])].squeeze(1).unsqueeze(0)))
