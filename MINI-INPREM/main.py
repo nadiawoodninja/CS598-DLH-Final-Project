@@ -112,9 +112,10 @@ class InpremData(Dataset):
         return len(self.x)
     
     def __getitem__(self, index):
-        return (self.x[index], self.x[index], self.y[index])
-        #mask = torch.zeros( (3, 5) )
-        #return (self.x[index], mask, self.y[index])
+        # Mask is visits that patient had
+        #mask = torch.ones( (self.max_visit, 1) )
+        mask = torch.ones(self.max_visit)
+        return (self.x[index], mask, self.y[index])
 
 def main(opts):
     os.environ['CUDA_VISIBLE_DEVICES'] = opts.gpu_devices
@@ -133,7 +134,7 @@ def main(opts):
 
     data = torch.zeros( (heart_data_by_subject.shape[0], codes.shape[0], max_visits) )
     data = torch.zeros( (heart_data_by_subject.shape[0], 3, max_visits) )
-    data = torch.zeros( (heart_data_by_subject.shape[0], 34, 2) )
+    data = torch.ones( (heart_data_by_subject.shape[0], 34, 2) )
     print('data.shape')
     print(data.shape)
 

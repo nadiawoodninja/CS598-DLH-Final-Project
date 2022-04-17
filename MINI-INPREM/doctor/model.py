@@ -2,6 +2,7 @@
 # @Time : 2019/11/15 下午10:42
 # @Author : Xianli Zhang
 # @Email : xlbryant@stu.xjtu.edu.cn
+from turtle import pos
 import torch
 import torch.nn as nn
 import torch.nn.init as init
@@ -14,6 +15,7 @@ import torchsparseattn
 from doctor.sparsemax import Sparsemax
 
 def get_attn_key_pad_mask(seq_q, mask):
+    #print(seq_q.shape)
     mb_size, len_q, _ = seq_q.size()
     pad_attn_mask = mask.data.eq(0).unsqueeze(1)   # bx1xsk
     pad_attn_mask = pad_attn_mask.expand(mb_size, len_q, len_q) # bxsqxsk
