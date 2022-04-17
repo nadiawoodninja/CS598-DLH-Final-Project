@@ -1,6 +1,7 @@
 # CS598 DLH Final Project Spring 2022
 ## Nadia Wood (nadiaw2) and Diana Gonzalez Santillan (dianag4)
 
+### Running the code
 
 #### Python version: Python3 
 #### IDE: Visual Studio Code 
@@ -15,15 +16,25 @@ We used Visual Studio Code to import the project into and then proceeded to inst
 
 Once the dependencies are installed run the code by executing this
 <br>
-`python3 main.py`
+`python3 main.py task=['diagnoses', 'heart', 'diabetes', 'kidney']
+                    emb_dim=256
+                    d_k=256
+                    d_v=256
+                    d_inner=256
+                    use_cuda=False
+                    optimizer=Adam`
+
+<br>
+If you plan to use GPU computation, install CUDA: https://developer.nvidia.com/cuda-downloads
+
 
 ## Open Datasets
 We used UC Irvine Machine Learning Repository to acquire our datasets needed for the project. This repository can be accessed here: https://archive.ics.uci.edu/ml/index.php
 
 ### Here are the datasets that we used from the repository
 
-Heart Disease: https://archive.ics.uci.edu/ml/datasets/Heart+Disease
-Diabetes Disease : https://archive.ics.uci.edu/ml/datasets/Diabetes
+Heart Disease: https://archive.ics.uci.edu/ml/datasets/Heart+Disease <br>
+Diabetes Disease : https://archive.ics.uci.edu/ml/datasets/Diabetes <br>
 Kidney Disease : https://archive.ics.uci.edu/ml/datasets/Chronic_Kidney_Disease
 
 ## MIMIC III Demo Dataset
