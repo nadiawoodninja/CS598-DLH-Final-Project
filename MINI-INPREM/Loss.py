@@ -38,7 +38,9 @@ class UncertaintyLoss(nn.Module):
         std = torch.sqrt(output[:, self.C:])
         pred = output[:, :self.C]
         dist = distributions.Normal(loc=torch.zeros_like(std), scale=std)
-        one_hot_label = torch.zeros(std.shape[0], self.C).scatter_(1, label.unsqueeze(1).cpu(), 1)
+        # Note: This errors with: RuntimeError: scatter(): Expected dtype int64 for index
+        #one_hot_label = torch.zeros(std.shape[0], self.C).scatter_(1, label.unsqueeze(1).cpu(), 1)
+        one_hot_label = torch.zeros(std.shape[0], self.C).scatter_(1, label.unsqueeze(1).cpu().type(torch.LongTensor), 1)
         if std.is_cuda:
             one_hot_label = one_hot_label.cuda()
         loss = None
