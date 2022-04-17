@@ -132,11 +132,10 @@ def main(opts):
     heart_data_by_subject = heart_data.groupby('SUBJECT_ID').count()
     max_visits = heart_data_by_subject['CHARTDATE'].max()
 
-    data = torch.zeros( (heart_data_by_subject.shape[0], codes.shape[0], max_visits) )
-    data = torch.zeros( (heart_data_by_subject.shape[0], 3, max_visits) )
-    data = torch.ones( (heart_data_by_subject.shape[0], 34, 2) )
-    print('data.shape')
-    print(data.shape)
+    # data = torch.zeros( (heart_data_by_subject.shape[0], codes.shape[0], max_visits) )
+    # data = torch.zeros( (heart_data_by_subject.shape[0], 3, max_visits) )
+    # data = torch.ones( (heart_data_by_subject.shape[0], 34, 2) )
+    data = torch.ones( (heart_data_by_subject.shape[0], max_visits, codes.shape[0]) )
 
     disease_status_by_subject = torch.zeros( (heart_data_by_subject.shape[0], 1) )
 
@@ -201,16 +200,17 @@ def main(opts):
     want it, next would be training etc, I have added notes about that under that TO DO
     '''
 
-    # 2x34 and 2x128
-    print(input_dim) # Based on data
-    print(max(train_set.max_visit, valid_set.max_visit, test_set.max_visit)) # Based on data
-    # Note: out_dim = 2
-    print(opts.emb_dim) # 128
-    print(opts.n_depth) # 2
-    print(opts.n_head) # 2
-    print(opts.d_k) # 128
-    print(opts.d_v) # 128
-    print('---')
+    # # 2x34 and 2x128
+    # print(input_dim) # Based on data
+    # print(max(train_set.max_visit, valid_set.max_visit, test_set.max_visit)) # Based on data
+    # # Note: out_dim = 2
+    # print(opts.emb_dim) # 128
+    # print(opts.n_depth) # 2
+    # print(opts.n_head) # 2
+    # print(opts.d_k) # 128
+    # print(opts.d_v) # 128
+    # print('---')
+
     '''Define the model.'''
     net = Inprem(opts.task, input_dim, 2, opts.emb_dim,
                  max(train_set.max_visit, valid_set.max_visit, test_set.max_visit),
@@ -238,15 +238,16 @@ def main(opts):
     # Train
     net.train()
     for epoch in range(0, opts.epochs):
+        print('epoch = ' + str(epoch))
         for (x, mask, y) in train_loader:
             train_loss = 0
 
-            print('x')
-            print(x.shape)
-            print('mask')
-            print(mask.shape)
-            print('y')
-            print(y)
+            #print('x')
+            #print(x.shape)
+            #print('mask')
+            #print(mask.shape)
+            #print('y')
+            #print(y)
 
             optimizer.zero_grad()
             #out = net(data.x, data.edge_index, data.batch)
