@@ -102,20 +102,20 @@ def monto_calo_test(net, seq, mask, T):
 class InpremData(Dataset):
     max_visit = 0
     x = []
+    mask = []
     y = []
 
-    def __init__(self, visit_data, disease_status):
+    def __init__(self, visit_data, visit_mask, disease_status):
         self.x = visit_data
+        self.mask = visit_mask
         self.y = disease_status
+        self.max_visit = visit_data.shape[1]
 
     def __len__(self):
         return len(self.x)
     
     def __getitem__(self, index):
-        # Mask is visits that patient had
-        #mask = torch.ones( (self.max_visit, 1) )
-        mask = torch.ones(self.max_visit)
-        return (self.x[index], mask, self.y[index])
+        return (self.x[index], self.mask[index], self.y[index])
 
 def main(opts):
     os.environ['CUDA_VISIBLE_DEVICES'] = opts.gpu_devices
@@ -132,20 +132,50 @@ def main(opts):
     heart_data_by_subject = heart_data.groupby('SUBJECT_ID').count()
     max_visits = heart_data_by_subject['CHARTDATE'].max()
 
+    data = torch.zeros( (heart_data_by_subject.shape[0], max_visits, codes.shape[0]) )
+    visit_mask = torch.zeros( (heart_data_by_subject.shape[0], max_visits) )
+    disease_status_by_subject = torch.zeros( (heart_data_by_subject.shape[0], 1) )
+    for index, entry in enumerate(heart_data_by_subject.iterrows()):
+        subject_id = entry[0];
+        has_disease = False
+
+        visit_nbr = 0
+        for visit in heart_data.iterrows():
+            entry = visit[1]
+            #print(visit)
+            if entry['SUBJECT_ID'] == subject_id:
+                #dt = entry['CHARTDATE']
+                code = entry['CPT_CD']
+                has_disease = entry['HAS_DIAG'] == 1
+                #print(code)
+                for code_idx, code_record in enumerate(codes.iteritems()):
+                    #print(code_record)
+                    if code == code_record[1]:
+                        data[index][visit_nbr][code_idx] = 1
+                visit_mask[index][visit_nbr] = 1
+                visit_nbr += 1
+
+        if has_disease:
+            disease_status_by_subject[index] = 1.0
+        #print(data[index])
+        #print(visit_mask[index])
+        #print(disease_status_by_subject[index])
+
     # data = torch.zeros( (heart_data_by_subject.shape[0], codes.shape[0], max_visits) )
     # data = torch.zeros( (heart_data_by_subject.shape[0], 3, max_visits) )
     # data = torch.ones( (heart_data_by_subject.shape[0], 34, 2) )
-    data = torch.ones( (heart_data_by_subject.shape[0], max_visits, codes.shape[0]) )
+    # data = torch.ones( (heart_data_by_subject.shape[0], max_visits, codes.shape[0]) )
 
-    disease_status_by_subject = torch.zeros( (heart_data_by_subject.shape[0], 1) )
+    # disease_status_by_subject = torch.zeros( (heart_data_by_subject.shape[0], 1) )
 
-    train_set = InpremData(data, disease_status_by_subject)
-    valid_set = InpremData(data, disease_status_by_subject)
-    test_set = InpremData(data, disease_status_by_subject)
+    train_set = InpremData(data, visit_mask, disease_status_by_subject)
+    valid_set = InpremData(data, visit_mask, disease_status_by_subject)
+    test_set = InpremData(data, visit_mask, disease_status_by_subject)
 
-    train_set.max_visit = max_visits
-    valid_set.max_visit = max_visits
-    test_set.max_visit = max_visits
+    # print(train_set.max_visit)
+    # train_set.max_visit = max_visits
+    # valid_set.max_visit = max_visits
+    # test_set.max_visit = max_visits
 
     # Split subject IDs into 3 groups (75% train, 10% valid, 15% test)
 
@@ -233,7 +263,7 @@ def main(opts):
 
     #TODO: Training, validating, and testing.
 
-    train_loader = DataLoader(train_set, batch_size = 1)
+    train_loader = DataLoader(train_set, batch_size = 32)
 
     # Train
     net.train()
@@ -242,16 +272,7 @@ def main(opts):
         for (x, mask, y) in train_loader:
             train_loss = 0
 
-            #print('x')
-            #print(x.shape)
-            #print('mask')
-            #print(mask.shape)
-            #print('y')
-            #print(y)
-
             optimizer.zero_grad()
-            #out = net(data.x, data.edge_index, data.batch)
-            #loss = criterion(out, data.y)
             out = net(x, mask)
             loss = criterion(out, y)
             loss.backward()
@@ -259,6 +280,11 @@ def main(opts):
 
             train_loss += loss.item()
 
+    # Validate
+    # Not required if hyper parameters have already been determined?
+
+    # Test
+    net.eval()
     return
     '''
     Diana notes: I wrote a skeleton for the epochs based on what I remember from the HWs...
