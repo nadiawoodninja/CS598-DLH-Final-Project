@@ -122,7 +122,7 @@ def main(opts):
 
     # Nadia - Load dataset
     DATA_PATH = "../datasets/"
-    
+
     heart_data = pd.read_csv(DATA_PATH + 'HeartFinalDataset.csv').drop_duplicates().sort_values(by=['SUBJECT_ID', 'CHARTDATE'])
 
     codes = heart_data['CPT_CD'].drop_duplicates()
@@ -147,9 +147,7 @@ def main(opts):
                 #dt = entry['CHARTDATE']
                 code = entry['CPT_CD']
                 has_disease = entry['HAS_DIAG'] == 1
-                #print(code)
                 for code_idx, code_record in enumerate(codes.iteritems()):
-                    #print(code_record)
                     if code == code_record[1]:
                         data[index][visit_nbr][code_idx] = 1
                 visit_mask[index][visit_nbr] = 1
@@ -157,31 +155,12 @@ def main(opts):
 
         if has_disease:
             disease_status_by_subject[index] = 1.0
-        #print(data[index])
-        #print(visit_mask[index])
-        #print(disease_status_by_subject[index])
-
-    # data = torch.zeros( (heart_data_by_subject.shape[0], codes.shape[0], max_visits) )
-    # data = torch.zeros( (heart_data_by_subject.shape[0], 3, max_visits) )
-    # data = torch.ones( (heart_data_by_subject.shape[0], 34, 2) )
-    # data = torch.ones( (heart_data_by_subject.shape[0], max_visits, codes.shape[0]) )
-
-    # disease_status_by_subject = torch.zeros( (heart_data_by_subject.shape[0], 1) )
 
     train_set = InpremData(data, visit_mask, disease_status_by_subject)
     valid_set = InpremData(data, visit_mask, disease_status_by_subject)
     test_set = InpremData(data, visit_mask, disease_status_by_subject)
 
-    # print(train_set.max_visit)
-    # train_set.max_visit = max_visits
-    # valid_set.max_visit = max_visits
-    # test_set.max_visit = max_visits
-
     # Split subject IDs into 3 groups (75% train, 10% valid, 15% test)
-
-    # input_dim will be fed to torch.nn.Linear function (in_features parameter)
-    # Maybe number of diagnosis codes?
-    # https://pytorch.org/docs/stable/generated/torch.nn.Linear.html
 
     ''' Diana notes LOADING DATA:
     0. 
