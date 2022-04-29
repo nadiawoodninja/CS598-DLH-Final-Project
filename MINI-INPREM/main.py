@@ -2,15 +2,24 @@
 # @Time : 2019/11/14 下午5:19
 # @Author : Xianli Zhang
 # @Email : xlbryant@stu.xjtu.edu.cn
+
+'''
+EDITED BY: Nadia Wood (NW) and Diana Gonzalez Santillan (DGS)
+NOTE: Edits made by use are marked with out initials at the top of each code block
+'''
+
 import os
 import argparse
 import torch
 import torch.nn.functional as F
 from doctor.model import Inprem
 from Loss import UncertaintyLoss
+
+''' IMPORTS by NW and DGS: '''
 import pandas as pd
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
+import math
 
 
 # diagnoses bestsetting batch 32 lr 0.0005 l2 0.0001 drop 0.5 emb 256 starval 50 end val 65
@@ -18,7 +27,7 @@ def args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--task', choices=('diagnoses', 'heart', 'diabetes', 'kidney'),
                         help='Choose a task.', default='heart')
-    parser.add_argument('--data_root', type=str, default='../../datasets/',
+    parser.add_argument('--data_root', type=str, default='../datasets/',
                         help='The dataset root dir.')
     parser.add_argument('--fold', choices=(1, 2, 3, 4, 5), default=1, help='Choose a fold.')
 
@@ -76,7 +85,6 @@ def args():
     parser.add_argument('--data_scale', default=1, type=float)
     return parser
 
-
 def monto_calo_test(net, seq, mask, T):
     out, aleatoric = None, None
     outputs = []
@@ -99,6 +107,10 @@ def monto_calo_test(net, seq, mask, T):
 
     return out, aleatoric, epistemic, outputs
 
+''' CLASS ADDED BY NW 
+InpremData had 4 properties:
+TODO -- explain the 4 properties
+'''
 class InpremData(Dataset):
     max_visit = 0
     x = []
@@ -117,30 +129,77 @@ class InpremData(Dataset):
     def __getitem__(self, index):
         return (self.x[index], self.mask[index], self.y[index])
 
+'''
+
+main METHOD EDITED BY NW AND DGS
+
+NW:
+- General dataset loading and overall data setup -- InpremData class
+- Epoch loop for training and testing
+
+DGS:
+- Initial pseudocode for dataset loading and for training (later replaced by actual code)
+- Logic to choose correct dataset based on task and split data into train test valid
+- split code into functions to clearly show preprocessing, training, evaluation
+''' 
 def main(opts):
+
+    ''' preprocessing code '''
+    train_set, valid_set, test_set, input_dim = preprocessing(opts)
+
+    '''Define the model.'''
+    net = Inprem(opts.task, input_dim, 2, opts.emb_dim,
+                 max(train_set.max_visit, valid_set.max_visit, test_set.max_visit),
+                 opts.n_depth, opts.n_head, opts.d_k, opts.d_v, opts.d_inner,
+                 opts.cap_uncertainty, opts.drop_rate, False, opts.dp, opts.dvp, opts.ds)
+    
+    ''' train and validate model '''
+    training(opts, net, train_set, valid_set)
+
+    ''' test model '''
+    evaluate(net, test_set)
+
+    ''' save pretrained model '''
+    # TODO --we should try to save the pretrained model
+
+    return
+
+''' preprocessing code '''
+def preprocessing(opts):
+    ''' setup GPUs if applicable'''
     os.environ['CUDA_VISIBLE_DEVICES'] = opts.gpu_devices
 
-    # Nadia - Load dataset
-    DATA_PATH = "../datasets/"
+    ''' determine which data to load'''
+    DATA_PATH = opts.data_root
+    if(opts.task == 'heart'):
+        data_csv = 'HeartFinalDataset.csv'
+    elif(opts.task == 'diagnoses'):
+        data_csv = 'diagnosisCode.csv'
+    elif(opts.task == 'diabetes'):
+        data_csv = '' # TODO -- what is the name for this one?
+    elif(opts.task == 'kidney'):
+        data_csv = '' # TODO -- what is the name for this one?
+    else:
+        print('please select a valid task')
+        return None
 
-    heart_data = pd.read_csv(DATA_PATH + 'HeartFinalDataset.csv').drop_duplicates().sort_values(by=['SUBJECT_ID', 'CHARTDATE'])
+    ''' load the data '''
+    # TODO - are these following lines going to work for all datasets or just heart
+    load_data = pd.read_csv(DATA_PATH + data_csv).drop_duplicates().sort_values(by=['SUBJECT_ID', 'CHARTDATE'])
+    codes = load_data['CPT_CD'].drop_duplicates()
+    load_data_by_subject = load_data.groupby('SUBJECT_ID').count()
+    max_visits = load_data_by_subject['CHARTDATE'].max()
 
-    codes = heart_data['CPT_CD'].drop_duplicates()
-
-    input_dim = codes.shape[0] # Number of distinct codes in the data set
-
-    heart_data_by_subject = heart_data.groupby('SUBJECT_ID').count()
-    max_visits = heart_data_by_subject['CHARTDATE'].max()
-
-    data = torch.zeros( (heart_data_by_subject.shape[0], max_visits, codes.shape[0]) )
-    visit_mask = torch.zeros( (heart_data_by_subject.shape[0], max_visits) )
-    disease_status_by_subject = torch.zeros( (heart_data_by_subject.shape[0], 1) )
-    for index, entry in enumerate(heart_data_by_subject.iterrows()):
+    ''' setup the data '''
+    data = torch.zeros( (load_data_by_subject.shape[0], max_visits, codes.shape[0]) )
+    visit_mask = torch.zeros( (load_data_by_subject.shape[0], max_visits) )
+    disease_status_by_subject = torch.zeros( (load_data_by_subject.shape[0], 1) )
+    for index, entry in enumerate(load_data_by_subject.iterrows()):
         subject_id = entry[0];
         has_disease = False
 
         visit_nbr = 0
-        for visit in heart_data.iterrows():
+        for visit in load_data.iterrows():
             entry = visit[1]
             #print(visit)
             if entry['SUBJECT_ID'] == subject_id:
@@ -156,82 +215,32 @@ def main(opts):
         if has_disease:
             disease_status_by_subject[index] = 1.0
 
-    train_set = InpremData(data, visit_mask, disease_status_by_subject)
-    valid_set = InpremData(data, visit_mask, disease_status_by_subject)
-    test_set = InpremData(data, visit_mask, disease_status_by_subject)
+    ''' split the data '''
+    # TODO Split subject IDs into 3 groups (75% train, 10% valid, 15% test)
+    total = data.shape[0]
+    seven_five = math.floor((75 * total) / 100)
+    ten = math.floor((10 * total)/ 100)
+    fifteen = total - seven_five - ten
 
-    # Split subject IDs into 3 groups (75% train, 10% valid, 15% test)
+    train_data, valid_data, test_data = torch.split(data, [seven_five, ten, fifteen])
 
-    ''' Diana notes LOADING DATA:
-    0. 
-    Command to run the code (change 'task' option according to what we want):
+    train_set = InpremData(train_data, visit_mask, disease_status_by_subject)
+    valid_set = InpremData(valid_data, visit_mask, disease_status_by_subject)
+    test_set  = InpremData(test_data , visit_mask, disease_status_by_subject)
 
-    python3 main.py task=['diagnoses', 'heart', 'diabetes', 'kidney']
-                    emb_dim=256 (all these 256s are 128 by default but paper states they used 256, but if it is too slow we can try the defaults)
-                    d_k=256
-                    d_v=256
-                    d_inner=256
-                    use_cuda=False (unless we are using a GPU, in that case need to include gpu_devices too)
-                    optimizer=Adam
+    input_dim = codes.shape[0] # Number of distinct codes in the data set
 
-    I only included all the opts that I know the values for from the paper... 
-    (we can leave defaults for: epochs, batch_size, drop_rate, lr, weight_decay,
-     n_head, n_depth, ... and all the other ones that appear in args() fcn above)
+    return (train_set, valid_set, test_set, input_dim)
 
-    1.
-    I think we can use the --data_root option when running main.py and set it to
-    --data_root=../datasets
-    (OR we can just change the default in the args() fcn to be ../datasets)
-
-    then opts.data_root will be the path to the datasets...
-    we can use that to file.open() the necessary dataset and somehow parse it...
-    to choose which file to file.open() we can check opts.task which will be one of
-    'diagnoses', 'heart', 'diabetes', or 'kidney' and depending on the task open the
-    correct dataset then...
-
-    2. 
-    Then we need to split the data into train, valid, and test with a ratio of
-    75:10:15 (thats the ratio they used in the paper), we should put the data in
-    train_set.data (.data makes sense to me but I think this can be whatever)
-    valid_set.data
-    test_set.data
-
-    3.
-    Also for each we need to figure out the max visit and save it in
-    train_set.max_visit
-    valid_set.max_visit
-    test_set.max_visit
-    respectively
-
-    4. we need to figure out what input_dim in the inprem definition should be... 256??
-
-    once we have steps 1-4 above I think the net model below should be defined like we
-    want it, next would be training etc, I have added notes about that under that TO DO
-    '''
-
-    # # 2x34 and 2x128
-    # print(input_dim) # Based on data
-    # print(max(train_set.max_visit, valid_set.max_visit, test_set.max_visit)) # Based on data
-    # # Note: out_dim = 2
-    # print(opts.emb_dim) # 128
-    # print(opts.n_depth) # 2
-    # print(opts.n_head) # 2
-    # print(opts.d_k) # 128
-    # print(opts.d_v) # 128
-    # print('---')
-
-    '''Define the model.'''
-    net = Inprem(opts.task, input_dim, 2, opts.emb_dim,
-                 max(train_set.max_visit, valid_set.max_visit, test_set.max_visit),
-                 opts.n_depth, opts.n_head, opts.d_k, opts.d_v, opts.d_inner,
-                 opts.cap_uncertainty, opts.drop_rate, False, opts.dp, opts.dvp, opts.ds)
-
+''' training code '''
+def training(opts, net, train_set, valid_set):
     '''Select loss function'''
     if opts.cap_uncertainty:
         criterion = UncertaintyLoss(opts.task, opts.monto_carlo_for_aleatoric, 2)
     else:
         criterion = CrossEntropy(opts.task)
 
+    ''' select use of GPUs'''
     if opts.use_cuda:
         net = torch.nn.DataParallel(net).cuda()
         criterion = criterion.cuda()
@@ -239,15 +248,23 @@ def main(opts):
     '''Select optimizer'''
     optimizer = torch.optim.Adam(net.parameters(), lr=opts.lr, weight_decay=opts.weight_decay)
 
+    print("\nTRAINING")
+    '''
+    Diana notes:
+    in the paper it is also mentioned that p_k = 0.5 , T_mc = 50 and T_test = 100
+    not sure where these numbers will come in handy but adding a note just incase
+    and also stacked multihead attention is stacked 2 times.
 
-    #TODO: Training, validating, and testing.
+    ALSO where should we include this
+    # In valid and test phase, you should use the monto_calo_test()
+    # monto_calo_test(net, input, mask, opts.monto_carlo_for_epistemic)
+    '''
 
+    ''' train model '''
     train_loader = DataLoader(train_set, batch_size = 32)
-
-    # Train
     net.train()
-    for epoch in range(0, opts.epochs):
-        print('epoch = ' + str(epoch))
+    for epoch in range(0, opts.epochs): #default is 25 epochs,we can use --epochs option to change it
+        print('epoch = ' + str(epoch+1) + ' of ' + str(opts.epochs))
         for (x, mask, y) in train_loader:
             train_loss = 0
 
@@ -258,52 +275,23 @@ def main(opts):
             optimizer.step()
 
             train_loss += loss.item()
+        train_loss = train_loss / len(train_loader)
+        print('Training Loss =' + str(train_loss))
 
-    # Validate
-    # Not required if hyper parameters have already been determined?
+    print("\nVALIDATING")
+    ''' validate model '''
+    valid_loader = DataLoader(valid_set, batch_size = 32)
+    # TODO (maybe) Not required if hyper parameters have already been determined?
 
-    # Test
+''' evaluation code '''
+def evaluate(net, test_set):
+    print("\nTESTING")
+    ''' test model '''
+    test_loader = DataLoader(test_set, batch_size = 32)
     net.eval()
-    return
-    '''
-    Diana notes: I wrote a skeleton for the epochs based on what I remember from the HWs...
-    '''
-    # TRAINING
-    for epoch in range(0,opts.epochs): #default is 25 epochs,we can use --epochs option to change it
-        '''
-        Diana notes:
-        the forward method for Inprem is forward(self,seq,mask)
-        so I guess seq will be a sequence of something? visits? from the data
-        not sure about mask, there's no mask mentioned in the paper :(
+    # TODO test our model ... 
 
-        in the paper it is also mentioned that p_k = 0.5 , T_mc = 50 and T_test = 100
-        not sure where these numbers will come in handy but adding a note just incase
-        and also stacked multihead attention is stacked 2 times.
-        '''
-        print('this is an epoch')
-        net.train()
-        train_loss = 0
-        #figure out what the optimizer is
-        #figure out what the loss criterion is
-        #for sequence in train_set.data: # this might be different
-            # figure out what the mask is
-            # zero out gradient: optimizer.zero_grad()
-            # send stuff to forward -- y_hat = net(sequence,mask) or something
-            # use loss criterion and do backward pass
-            # optimizer.step()
-            # train_loss += loss.item()
-        # train_loss = train_loss / len(train_loader)
-        valid_or_test = False
-        if valid_or_test: # not sure if this should be here or where
-            # In valid and test phase, you should use the monto_calo_test()
-            print('validation or test')
-            # monto_calo_test(net, input, mask, opts.monto_carlo_for_epistemic)
-        print('Epoch: {} \t Training Loss: {:.6f}'.format(epoch+1, train_loss))
-
-    # VALIDATING
-
-    # TESTING
-
+''' main method for executable '''
 if __name__ == '__main__':
     opts = args().parse_args()
     main(opts)
