@@ -20,7 +20,7 @@ import pandas as pd
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 import math
-
+from datetime import datetime
 
 # diagnoses bestsetting batch 32 lr 0.0005 l2 0.0001 drop 0.5 emb 256 starval 50 end val 65
 def args():
@@ -72,13 +72,13 @@ def args():
                         help='The size of Monto Carlo Sample.')
     parser.add_argument('--monto_carlo_for_epistemic', type=int, default=200,
                         help='The size of Monto Carlo Sample.')
-    parser.add_argument('--analysis_dir', type=str, default='../../output_for_analysis_final/',
+    parser.add_argument('--analysis_dir', type=str, default='../output_for_analysis_final/',
                         help='Set the analysis output dir')
     parser.add_argument('--write_performance', action='store_true', default=False,
                         help='Weather write performance result')
-    parser.add_argument('--performance_dir', type=str, default='../../metric_results/',
+    parser.add_argument('--performance_dir', type=str, default='../metric_results/',
                         help='Set the performance dir')
-    parser.add_argument('--save_model_dir', type=str, default='../../saved_model',
+    parser.add_argument('--save_model_dir', type=str, default='../saved_model/',
                         help='Set dir to save the model which has the best performance.')
     parser.add_argument('--resume', type=str, default=None,
                         help='Choose the model dict to load for test or fine-tune.')
@@ -135,12 +135,24 @@ main METHOD EDITED BY NW AND DGS
 
 NW:
 - General dataset loading and overall data setup -- InpremData class
-- Epoch loop for training and testing
+- Epoch loop for selecting loss function and optimizer and training
+
 
 DGS:
 - Initial pseudocode for dataset loading and for training (later replaced by actual code)
 - Logic to choose correct dataset based on task and split data into train test valid
 - split code into functions to clearly show preprocessing, training, evaluation
+- validation part (based on https://pytorch.org/tutorials/beginner/introyt/trainingyt.html)
+
+
+    Diana notes:
+    in the paper it is also mentioned that p_k = 0.5 , T_mc = 50 and T_test = 100
+    not sure where these numbers will come in handy but adding a note just incase
+    and also stacked multihead attention is stacked 2 times.
+
+    ALSO where should we include this (TODO)
+    # In valid and test phase, you should use the monto_calo_test()
+    # monto_calo_test(net, input, mask, opts.monto_carlo_for_epistemic)
 ''' 
 def main(opts):
 
@@ -160,7 +172,7 @@ def main(opts):
     evaluate(net, test_set)
 
     ''' save pretrained model '''
-    # TODO --we should try to save the pretrained model
+    torch.save(net.state_dict(), opts.save_model_dir + 'pretrained.pt')
 
     return
 
@@ -216,7 +228,7 @@ def preprocessing(opts):
             disease_status_by_subject[index] = 1.0
 
     ''' split the data '''
-    # TODO Split subject IDs into 3 groups (75% train, 10% valid, 15% test)
+    # Split subject IDs into 3 groups (75% train, 10% valid, 15% test)
     total = data.shape[0]
     seven_five = math.floor((75 * total) / 100)
     ten = math.floor((10 * total)/ 100)
@@ -248,25 +260,21 @@ def training(opts, net, train_set, valid_set):
     '''Select optimizer'''
     optimizer = torch.optim.Adam(net.parameters(), lr=opts.lr, weight_decay=opts.weight_decay)
 
-    print("\nTRAINING")
-    '''
-    Diana notes:
-    in the paper it is also mentioned that p_k = 0.5 , T_mc = 50 and T_test = 100
-    not sure where these numbers will come in handy but adding a note just incase
-    and also stacked multihead attention is stacked 2 times.
-
-    ALSO where should we include this
-    # In valid and test phase, you should use the monto_calo_test()
-    # monto_calo_test(net, input, mask, opts.monto_carlo_for_epistemic)
-    '''
-
-    ''' train model '''
+    ''' get loaders and initial values'''
     train_loader = DataLoader(train_set, batch_size = 32)
-    net.train()
+    valid_loader = DataLoader(valid_set, batch_size = 32)
+    best_vloss = 1_000_000 # just very large
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+    ''' run epochs '''
     for epoch in range(0, opts.epochs): #default is 25 epochs,we can use --epochs option to change it
-        print('epoch = ' + str(epoch+1) + ' of ' + str(opts.epochs))
+        print('\nEpoch ' + str(epoch+1) + ' of ' + str(opts.epochs))
+        
+        ''' train model '''
+        print("TRAINING")
+        net.train(True)
+        train_loss = 0
         for (x, mask, y) in train_loader:
-            train_loss = 0
 
             optimizer.zero_grad()
             out = net(x, mask)
@@ -275,13 +283,27 @@ def training(opts, net, train_set, valid_set):
             optimizer.step()
 
             train_loss += loss.item()
-        train_loss = train_loss / len(train_loader)
-        print('Training Loss =' + str(train_loss))
+        avg_loss = train_loss / len(train_loader)
+        print('Training Loss =' + str(avg_loss))
 
-    print("\nVALIDATING")
-    ''' validate model '''
-    valid_loader = DataLoader(valid_set, batch_size = 32)
-    # TODO (maybe) Not required if hyper parameters have already been determined?
+        ''' validate model '''
+        print("VALIDATING")
+        net.train(False)
+        valid_loss = 0.0
+        for (v_x, v_mask, v_y) in valid_loader:
+            voutputs = net(v_x, v_mask)
+            vloss = criterion(voutputs, v_y)
+            valid_loss += vloss
+
+        avg_vloss = valid_loss / len(valid_loader)
+        print('Validation Loss =' + str(avg_vloss))
+
+        # Track best performance, and save the model's state
+        if avg_vloss < best_vloss:
+            best_vloss = avg_vloss
+            model_path = '../validation/model_{}_{}'.format(timestamp, epoch) 
+            torch.save(net.state_dict(), model_path)
+
 
 ''' evaluation code '''
 def evaluate(net, test_set):
