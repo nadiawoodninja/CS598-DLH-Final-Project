@@ -98,21 +98,15 @@ NOTE: If you plan to use GPU computation, install CUDA: https://developer.nvidia
 
 ### Open Datasets Used
 
-#### University of California Irvine (UCI) Machine Learning Repository
-
-We used the UCI Machine Learning Repository to acquire the disease related datasets needed for the project. This repository can be accessed here: https://archive.ics.uci.edu/ml/index.php
-
-In particular, we used the following three datasets from the UCI Repository. The data can be easily downloaded by clicking on the  "Data Folder" link next to the word "Download" under each of the datasets' names:
-
-Heart Disease: https://archive.ics.uci.edu/ml/datasets/Heart+Disease <br>
-Diabetes Disease : https://archive.ics.uci.edu/ml/datasets/Diabetes <br>
-Kidney Disease : https://archive.ics.uci.edu/ml/datasets/Chronic_Kidney_Disease
-
 #### MIMIC III Demo Dataset
 
-We also used the publicly available MIMIC III dataset to acquire the diagnosis codes dataset needed for the project. Specifically, we followed these instructions to access the MIMIC III demo data: https://mimic.mit.edu/docs/gettingstarted/cloud/bigquery/ <br>
+We used the publicly available MIMIC III dataset to acquire the diagnosis codes dataset, and the Heart Failure dataset needed for the project. Specifically, we followed these instructions to access the MIMIC III demo data: https://mimic.mit.edu/docs/gettingstarted/cloud/bigquery/ <br>
 
-To get the dataset specific to medical visits, we used: `SELECT  * FROM physionet-data.mimiciii_demo.admissions`
+Then, to get the dataset specific to medical visit codes, we used:
+<br>`SELECT  * FROM physionet-data.mimiciii_demo.admissions`
+
+Next, to get the dataset specific to heart failure disease, we used:
+<br> TODO: which select here??
 
 ### RESULTS
 
