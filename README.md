@@ -29,7 +29,7 @@ We used Visual Studio Code to import the project, and then intalled the followin
 Once the dependencies are installed you can run the preprocessing, training, and evaluation code by executing the follwing command:
 <br>
 
-`python3 main.py --task=[TASK] --emb_dim=256 --d_k=256 --d_v=256 --d_inner=256 --use_cuda=False --optimizer=Adam`
+`python3 main.py --task=[TASK] --emb_dim=256 --d_k=256 --d_v=256 --d_inner=256`
 <br>
 
 where `[TASK]` must be one of `diagnoses`, `heart`, `diabetes`, or `kidney`.
@@ -52,7 +52,7 @@ Feel free to change any of the other hyperparameters to see the changes in the r
 <br>
 `--drop_rate`, type=float, default=0.5
 <br>
-`--optimizer`, choices=('Adam', 'SGD', 'Adadelta'), required=False
+`--optimizer`, choices=('Adam', 'SGD', 'Adadelta'), required=False, default='Adam'
 <br>
 `--lr`, type=float, default=5e-4, learning rate
 <br>
