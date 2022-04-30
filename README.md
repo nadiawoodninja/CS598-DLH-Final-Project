@@ -32,11 +32,11 @@ Once the dependencies are installed you can run the preprocessing, training, and
 `python3 main.py --task=[TASK] --emb_dim=256 --d_k=256 --d_v=256 --d_inner=256`
 <br>
 
-where `[TASK]` must be one of `diagnoses`, `heart`, `diabetes`, or `kidney`.
+where `[TASK]` must be one of `diagnoses`, or `heart`. Note: Original code included diabetes and kidney disease tasks as well, but we have excluded that from our reproduction for simplicity.
 
 Feel free to change any of the other hyperparameters to see the changes in the results of the model. Here is the full list of options available for you to run the model, along with their default values:
 
-`--task`, choices=('diagnoses', 'heart', 'diabetes', 'kidney'), default='heart', task to run
+`--task`, choices=('diagnoses', 'heart'), default='heart', task to run
 <br>
 `--data_root`, type=str, default='../datasets/', dataset root directory
 <br>
