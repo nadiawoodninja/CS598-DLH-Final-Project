@@ -25,7 +25,7 @@ from datetime import datetime
 # diagnoses bestsetting batch 32 lr 0.0005 l2 0.0001 drop 0.5 emb 256 starval 50 end val 65
 def args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--task', choices=('diagnoses', 'heart', 'diabetes', 'kidney'),
+    parser.add_argument('--task', choices=('diagnoses', 'heart'), # excluded 'diabetes', 'kidney'
                         help='Choose a task.', default='heart')
     parser.add_argument('--data_root', type=str, default='../datasets/',
                         help='The dataset root dir.')
@@ -41,7 +41,7 @@ def args():
     parser.add_argument('--drop_rate', type=float, default=0.5,
                         help='The drop-out rate before each weight layer.')
     parser.add_argument('--optimizer', choices=('Adam', 'SGD', 'Adadelta'),
-                        help='Choose the optimizer.', required=False)
+                        help='Choose the optimizer.', required=False, default='Adam')
     parser.add_argument('--lr', type=float, default=5e-4,
                         help='The learning rate for each step.')
     parser.add_argument('--weight_decay', type=float, default=1e-4,
@@ -107,10 +107,7 @@ def monto_calo_test(net, seq, mask, T):
 
     return out, aleatoric, epistemic, outputs
 
-''' CLASS ADDED BY NW 
-InpremData had 4 properties:
-TODO -- explain the 4 properties
-'''
+''' CLASS ADDED BY NW  '''
 class InpremData(Dataset):
     max_visit = 0
     x = []
@@ -130,19 +127,19 @@ class InpremData(Dataset):
         return (self.x[index], self.mask[index], self.y[index])
 
 '''
-
 main METHOD EDITED BY NW AND DGS
 
 NW:
 - General dataset loading and overall data setup -- InpremData class
-- Epoch loop for selecting loss function and optimizer and training
-
+- wrangling of heart dataset to be usable with our code (created heart csv file)
+- Epoch loop for selecting loss function, selecting optimizer, and training model
 
 DGS:
 - Initial pseudocode for dataset loading and for training (later replaced by actual code)
 - Logic to choose correct dataset based on task and split data into train test valid
 - split code into functions to clearly show preprocessing, training, evaluation
 - validation part (based on https://pytorch.org/tutorials/beginner/introyt/trainingyt.html)
+- testing part (based on https://docs.microsoft.com/en-us/windows/ai/windows-ml/tutorials/pytorch-analysis-train-model)
 
 
     Diana notes:
@@ -156,8 +153,11 @@ DGS:
 ''' 
 def main(opts):
 
+    ''' setup GPUs if applicable'''
+    os.environ['CUDA_VISIBLE_DEVICES'] = opts.gpu_devices
+
     ''' preprocessing code '''
-    train_set, valid_set, test_set, input_dim = preprocessing(opts)
+    train_set, valid_set, test_set, input_dim = preprocessing(opts.task, opts.data_root)
 
     '''Define the model.'''
     net = Inprem(opts.task, input_dim, 2, opts.emb_dim,
@@ -165,38 +165,32 @@ def main(opts):
                  opts.n_depth, opts.n_head, opts.d_k, opts.d_v, opts.d_inner,
                  opts.cap_uncertainty, opts.drop_rate, False, opts.dp, opts.dvp, opts.ds)
     
+    model_path = opts.save_model_dir + 'pretrained.pt'
+
     ''' train and validate model '''
-    training(opts, net, train_set, valid_set)
+    training(opts, net, train_set, valid_set, model_path)
+    ''' NOTE: at this point we will have saved the best pretrained model in model_path '''
 
-    ''' test model '''
-    evaluate(net, test_set)
-
-    ''' save pretrained model '''
-    torch.save(net.state_dict(), opts.save_model_dir + 'pretrained.pt')
+    ''' test (saved) model '''
+    evaluate(net, test_set, model_path)
 
     return
 
 ''' preprocessing code '''
-def preprocessing(opts):
-    ''' setup GPUs if applicable'''
-    os.environ['CUDA_VISIBLE_DEVICES'] = opts.gpu_devices
+def preprocessing(task, data_root):
 
     ''' determine which data to load'''
-    DATA_PATH = opts.data_root
-    if(opts.task == 'heart'):
+    DATA_PATH = data_root
+    if(task == 'heart'):
         data_csv = 'HeartFinalDataset.csv'
-    elif(opts.task == 'diagnoses'):
+    elif(task == 'diagnoses'):
         data_csv = 'diagnosisCode.csv'
-    elif(opts.task == 'diabetes'):
-        data_csv = '' # TODO -- what is the name for this one?
-    elif(opts.task == 'kidney'):
-        data_csv = '' # TODO -- what is the name for this one?
     else:
         print('please select a valid task')
         return None
 
     ''' load the data '''
-    # TODO - are these following lines going to work for all datasets or just heart
+    # TODO - data wrangling for diagnoses dataset (below works for heart)
     load_data = pd.read_csv(DATA_PATH + data_csv).drop_duplicates().sort_values(by=['SUBJECT_ID', 'CHARTDATE'])
     codes = load_data['CPT_CD'].drop_duplicates()
     load_data_by_subject = load_data.groupby('SUBJECT_ID').count()
@@ -245,7 +239,7 @@ def preprocessing(opts):
     return (train_set, valid_set, test_set, input_dim)
 
 ''' training code '''
-def training(opts, net, train_set, valid_set):
+def training(opts, net, train_set, valid_set, model_path):
     '''Select loss function'''
     if opts.cap_uncertainty:
         criterion = UncertaintyLoss(opts.task, opts.monto_carlo_for_aleatoric, 2)
@@ -258,7 +252,16 @@ def training(opts, net, train_set, valid_set):
         criterion = criterion.cuda()
 
     '''Select optimizer'''
-    optimizer = torch.optim.Adam(net.parameters(), lr=opts.lr, weight_decay=opts.weight_decay)
+    optimizer = None
+    if (opts.optimizer == 'Adam'):
+        optimizer = torch.optim.Adam(net.parameters(), lr=opts.lr, weight_decay=opts.weight_decay)
+    elif (opts.optimizer == 'SGD'):
+        optimizer = torch.optim.SGD(net.parameters(), lr=opts.lr, weight_decay=opts.weight_deca)
+    elif (opts.optimizer == 'Adadelta'):
+        optimizer = torch.optim.Adadelta(net.parameters(), lr=opts.lr, weight_decay=opts.weight_deca)
+    else: # default = Adam
+        optimizer = torch.optim.Adam(net.parameters(), lr=opts.lr, weight_decay=opts.weight_decay)
+        
 
     ''' get loaders and initial values'''
     train_loader = DataLoader(train_set, batch_size = 32)
@@ -286,7 +289,7 @@ def training(opts, net, train_set, valid_set):
         avg_loss = train_loss / len(train_loader)
         print('Training Loss =' + str(avg_loss))
 
-        ''' validate model '''
+        ''' validate model AND save best one '''
         print("VALIDATING")
         net.train(False)
         valid_loss = 0.0
@@ -301,17 +304,28 @@ def training(opts, net, train_set, valid_set):
         # Track best performance, and save the model's state
         if avg_vloss < best_vloss:
             best_vloss = avg_vloss
-            model_path = '../validation/model_{}_{}'.format(timestamp, epoch) 
+            model_path = model_path
+            # if there's already one we will replace it so we just save best one 
             torch.save(net.state_dict(), model_path)
 
 
 ''' evaluation code '''
-def evaluate(net, test_set):
+def evaluate(net, test_set, model_path):
     print("\nTESTING")
     ''' test model '''
     test_loader = DataLoader(test_set, batch_size = 32)
+    net.load_state_dict(torch.load(model_path)) 
     net.eval()
-    # TODO test our model ... 
+    total = 0
+    running_accuracy = 0
+    for (x, mask, y) in test_loader: 
+        y = y.to(torch.float32) 
+        predicted_outputs = net(x,mask)
+        _, predicted = torch.max(predicted_outputs, 1) 
+        total += y.size(0) 
+        running_accuracy += (predicted == y).sum().item() 
+
+    print("Accuracy: " + str(100 * running_accuracy / total))
 
 ''' main method for executable '''
 if __name__ == '__main__':
