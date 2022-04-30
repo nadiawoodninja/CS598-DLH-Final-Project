@@ -117,3 +117,17 @@ To get the dataset specific to medical visits, we used: `SELECT  * FROM physione
 ### RESULTS
 
 TODO -- include table of results!
+
+### APPENDIX: Communication With Authors
+
+<img width="1133" alt="1" src="https://user-images.githubusercontent.com/80500914/166115836-37eba716-438c-4a97-9e4e-ab3bb3aafb24.png">
+<img width="1041" alt="2" src="https://user-images.githubusercontent.com/80500914/166115851-01c83462-dda4-4b9e-b26f-e6b125b5beb9.png">
+<img width="1057" alt="3" src="https://user-images.githubusercontent.com/80500914/166115852-ab31edfa-a7fa-4403-8abb-7517e483ffda.png">
+<img width="810" alt="4" src="https://user-images.githubusercontent.com/80500914/166115846-7349c179-99ba-4ad8-8e09-e4ac9f83f01d.png">
+<img width="336" alt="5" src="https://user-images.githubusercontent.com/80500914/166115847-21ba704b-8aba-414f-9e5d-8b4d0317e738.png">
+<img width="1077" alt="6" src="https://user-images.githubusercontent.com/80500914/166115849-2b3a2152-a0cf-4ea1-9044-57da739f9751.png">
+<img width="1070" alt="7" src="https://user-images.githubusercontent.com/80500914/166115844-34819b3b-9080-4b2c-b25d-41aa6da485ea.png">
+<img width="639" alt="8" src="https://user-images.githubusercontent.com/80500914/166115842-a2845764-4c16-40ba-a5a8-405b7181020d.png">
+<img width="888" alt="9" src="https://user-images.githubusercontent.com/80500914/166115853-803959cb-c1ad-41ed-83d0-069562c142d1.png">
+
+Note: We did not choose to contact Professor Sum as we were able to find a way to wrangle the data they way we needed for it to work with the model.
