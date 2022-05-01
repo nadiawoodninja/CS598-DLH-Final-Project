@@ -71,7 +71,8 @@ def args():
                         help='Weather capture uncertainty.', default=True)
     parser.add_argument('--monto_carlo_for_aleatoric', type=int, default=100,
                         help='The size of Monto Carlo Sample.')
-    parser.add_argument('--monto_carlo_for_epistemic', type=int, default=200,
+    # Note: Previous monto_carlo_for_epistemic default was 200 (significantly increases epoch time)
+    parser.add_argument('--monto_carlo_for_epistemic', type=int, default=10,
                         help='The size of Monto Carlo Sample.')
     parser.add_argument('--analysis_dir', type=str, default='../output_for_analysis_final/',
                         help='Set the analysis output dir')
@@ -284,8 +285,8 @@ def training(opts, net, train_set, valid_set, model_path):
         for (x, mask, y) in train_loader:
 
             optimizer.zero_grad()
-            out = net(x, mask)
-            #out, aleatoric, epistemic, outputs = monto_calo_test(net, x, mask, opts.monto_carlo_for_epistemic)
+            #out = net(x, mask)
+            out, aleatoric, epistemic, outputs = monto_calo_test(net, x, mask, opts.monto_carlo_for_epistemic)
             loss = criterion(out, y)
             loss.backward()
             optimizer.step()
@@ -299,8 +300,8 @@ def training(opts, net, train_set, valid_set, model_path):
         net.train(False)
         valid_loss = 0.0
         for (v_x, v_mask, v_y) in valid_loader:
-            voutputs = net(v_x, v_mask)
-            #voutputs, aleatoric, epistemic, outputs = monto_calo_test(net, v_x, v_mask, opts.monto_carlo_for_epistemic)
+            #voutputs = net(v_x, v_mask)
+            voutputs, aleatoric, epistemic, outputs = monto_calo_test(net, v_x, v_mask, opts.monto_carlo_for_epistemic)
             vloss = criterion(voutputs, v_y)
             valid_loss += vloss
 
