@@ -3,6 +3,8 @@
 
 ### Citations
 
+---
+
 The code in this repository is an adaptation of the original code sent to us by Xianli Zhang through email (xlbryant@stu.xjtu.edu.cn), downloadable from this Google Drive folder:
 https://drive.google.com/file/d/1hfhM93zu_pc-SC2ppC6PTp5cFdfLjnsG/view?usp=sharing
 
@@ -12,25 +14,25 @@ Our work is based on a paper by Xianli Zhang et al. from Xi'an Jiaotong Universi
 
 ### Running the code
 
+---
+
 #### Python version: Python3 
 #### IDE: Visual Studio Code 
 In order to run the code provided by the authors of the paper, we had to install the following dependencies. 
 We used Visual Studio Code to import the project, and then intalled the following required libraries:
-<br>
-<br>
-  `sudo pip3 install torch torchvision`
-<br>
-  `sudo pip3 install Cython`
-<br>
-  `sudo pip3 install torchsparseattn`
-<br>
-  `sudo pip3 install pandas`
+
+```sh
+sudo pip3 install torch torchvision
+sudo pip3 install Cython
+sudo pip3 install torchsparseattn
+sudo pip3 install pandas
+```
 
 Once the dependencies are installed you can run the preprocessing, training, and evaluation code by executing the follwing command:
-<br>
+```sh
 
-`python3 main.py --task=[TASK] --emb_dim=256 --d_k=256 --d_v=256 --d_inner=256`
-<br>
+python3 main.py --task=[TASK] --emb_dim=256 --d_k=256 --d_v=256 --d_inner=256
+```
 
 where `[TASK]` must be one of `diagnoses`, or `heart`. Note: Original code included diabetes and kidney disease tasks as well, but we have excluded that from our reproduction for simplicity.
 
@@ -96,7 +98,9 @@ Feel free to change any of the other hyperparameters to see the changes in the r
 
 NOTE: If you plan to use GPU computation, install CUDA: https://developer.nvidia.com/cuda-downloads and include the --use_cuda=True flag.
 
-### Open Datasets Used
+### Data Wrangling Phase of the project 
+
+---
 
 #### MIMIC III Demo Dataset
 
@@ -104,10 +108,10 @@ We used the publicly available MIMIC III dataset to acquire the diagnosis codes 
 
 Then, we used the following queries to get the specific datasets we needed for the project:
 <br>
-##### HeartFinalDataset.csv Query
+##### To generate HeartFinalDataset.csv we used the query below
 
 ```
-SELECT c.SUBJECT_ID, c.CHARTDATE, c.CPT_CD, <br>
+SELECT c.SUBJECT_ID, c.CHARTDATE, c.CPT_CD, 
 CASE WHEN d.ICD9_CODE IS null THEN 0 ELSE 1 END AS HAS_DIAG
 FROM 'physionet-data.mimiciii_demo.cptevents' c
 LEFT JOIN 'physionet-data.mimiciii_demo.diagnoses_icd' d
@@ -116,17 +120,23 @@ WHERE c.CHARTDATE IS NOT null
 ORDER BY c.SUBJECT_ID, c.CHARTDATE
 ```
 
-##### diagnosisCode.csv Query
-`SELECT * FROM 'physionet-data.mimiciii_demo.diagnoses_icd'` 
+##### To generate diagnosisCode.csv we used the query below
 
-##### mimiciiiDemoData.csv Query
-`SELECT * FROM 'physionet-data.mimiciii_demo.admissions'`
+`SELECT * FROM 'physionet-data.mimiciii_demo.diagnoses_icd` 
 
-### RESULTS
+##### To generate mimiciiiDemoData.csv we used the query below 
+
+`SELECT * FROM 'physionet-data.mimiciii_demo.admissions`
+
+### Results
+
+---
 
 TODO -- include table of results!
 
 ### APPENDIX: Communication With Authors
+
+---
 
 <img width="1133" alt="1" src="https://user-images.githubusercontent.com/80500914/166115836-37eba716-438c-4a97-9e4e-ab3bb3aafb24.png">
 <img width="1041" alt="2" src="https://user-images.githubusercontent.com/80500914/166115851-01c83462-dda4-4b9e-b26f-e6b125b5beb9.png">
