@@ -159,7 +159,7 @@ def main(opts):
     ''' preprocessing code '''
     train_set, valid_set, test_set, input_dim = preprocessing(opts.task, opts.data_root)
 
-    '''Define the model.'''
+    ''' Define the model '''
     net = Inprem(opts.task, input_dim, 2, opts.emb_dim,
                  max(train_set.max_visit, valid_set.max_visit, test_set.max_visit),
                  opts.n_depth, opts.n_head, opts.d_k, opts.d_v, opts.d_inner,
