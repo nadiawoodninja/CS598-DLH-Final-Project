@@ -12,7 +12,7 @@ Our work is based on a paper by Xianli Zhang et al. from Xi'an Jiaotong Universi
 
 <b>Zhang, Xianli, et al.</b> “INPREM: An Interpretable and Trustworthy Predictive Model for Healthcare.” Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, 2020, https://doi.org/10.1145/3394486.3403087
 
-### Running the code
+### Running the Code
 
 ---
 
@@ -98,16 +98,27 @@ Feel free to change any of the other hyperparameters to see the changes in the r
 
 NOTE: If you plan to use GPU computation, install CUDA: https://developer.nvidia.com/cuda-downloads and include the --use_cuda=True flag.
 
-### Data Wrangling Phase of the project 
+### Data Wrangling Phase of the Project 
 
 ---
 
-#### MIMIC III Demo Dataset
+#### MIMIC III Demo Dataset from Google's BigQuery
 
 We used the publicly available MIMIC III dataset to acquire the diagnosis codes dataset, and the Heart Failure dataset needed for the project. Specifically, we followed these instructions to access the MIMIC III demo data: https://mimic.mit.edu/docs/gettingstarted/cloud/bigquery/ <br>
 
 Then, we used the following queries to get the specific datasets we needed for the project:
 <br>
+
+
+##### To generate mimiciiiDemoData.csv we used the query below 
+
+`SELECT * FROM 'physionet-data.mimiciii_demo.admissions`
+
+##### To generate diagnosisCode.csv we used the query below
+
+`SELECT * FROM 'physionet-data.mimiciii_demo.diagnoses_icd` 
+
+
 ##### To generate HeartFinalDataset.csv we used the query below
 
 ```
@@ -120,13 +131,27 @@ WHERE c.CHARTDATE IS NOT null
 ORDER BY c.SUBJECT_ID, c.CHARTDATE
 ```
 
-##### To generate diagnosisCode.csv we used the query below
 
-`SELECT * FROM 'physionet-data.mimiciii_demo.diagnoses_icd` 
+### Data Profiling and Stats - Understanding the Data 
 
-##### To generate mimiciiiDemoData.csv we used the query below 
+---
+*** Mimiciii Demo Admissions Data Stats
 
-`SELECT * FROM 'physionet-data.mimiciii_demo.admissions`
+mimiciiiDemoData.csv contains demo data from the **table** mimiciii_demo.admissions. Using panda-profiling we were quickly able to get a sense of the data and statistics about this dataset. A detailed report is avaiable here=> [Data Profiling Report](https://htmlpreview.github.io/?https://github.com/nadiawoodninja/CS598DLHFinalProject/blob/main/mimiciiiDemoDataStats.html)
+
+![image](https://user-images.githubusercontent.com/50491061/166164466-87322015-9591-4379-b3e9-3e2db6b08443.png)
+
+
+*** Diagnosis Code Data Stats
+A detailed report is avaiable here=> [Data Profiling Report](https://htmlpreview.github.io/?https://github.com/nadiawoodninja/CS598DLHFinalProject/blob/main/DiagnosisCodeDataStats.html)
+
+![image](https://user-images.githubusercontent.com/50491061/166164810-646bccdc-4d8d-4d86-9a2f-85146439679f.png)
+
+*** Heart Disease Data Stats
+A detailed report is avaiable here=> [Data Profiling Report](https://htmlpreview.github.io/?https://github.com/nadiawoodninja/CS598DLHFinalProject/blob/main/HeartDiseaseDataStats.html)
+
+![image](https://user-images.githubusercontent.com/50491061/166164871-2d7a123f-d3de-4ec9-8b37-1073bdd55262.png)
+
 
 ### Results
 
@@ -134,7 +159,7 @@ ORDER BY c.SUBJECT_ID, c.CHARTDATE
 
 TODO -- include table of results!
 
-### APPENDIX: Communication With Authors
+### Appendix: Communication with Authors
 
 ---
 
