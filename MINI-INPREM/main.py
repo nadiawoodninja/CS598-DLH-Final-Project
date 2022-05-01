@@ -274,6 +274,7 @@ def training(opts, net, train_set, valid_set, model_path):
     ''' run epochs '''
     for epoch in range(0, opts.epochs): #default is 25 epochs,we can use --epochs option to change it
         print('\nEpoch ' + str(epoch+1) + ' of ' + str(opts.epochs))
+        #print('.', end='', flush=True)
         
         ''' train model '''
         print("TRAINING")
