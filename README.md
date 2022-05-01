@@ -102,24 +102,25 @@ NOTE: If you plan to use GPU computation, install CUDA: https://developer.nvidia
 
 We used the publicly available MIMIC III dataset to acquire the diagnosis codes dataset, and the Heart Failure dataset needed for the project. Specifically, we followed these instructions to access the MIMIC III demo data: https://mimic.mit.edu/docs/gettingstarted/cloud/bigquery/ <br>
 
-Then, to get the dataset specific to medical visit codes, we used:
-<br>`SELECT  * FROM physionet-data.mimiciii_demo.admissions`
-
-Next, to get the dataset specific to heart failure disease, we used:
-<br><br> 
+Then, we used the following queries to get the specific datasets we needed for the project:
+<br>
 ##### HeartFinalDataset.csv Query
 
-select c.SUBJECT_ID, c.CHARTDATE, c.CPT_CD, case when d.ICD9_CODE is null then 0 else 1 end as HAS_DIAG
-from `physionet-data.mimiciii_demo.cptevents` c
-left join `physionet-data.mimiciii_demo.diagnoses_icd` d on c.SUBJECT_ID=d.SUBJECT_ID and d.ICD9_CODE='42731'
-where c.CHARTDATE is not null
-order by c.SUBJECT_ID, c.CHARTDATE
+```
+SELECT c.SUBJECT_ID, c.CHARTDATE, c.CPT_CD, <br>
+CASE WHEN d.ICD9_CODE IS null THEN 0 ELSE 1 END AS HAS_DIAG
+FROM 'physionet-data.mimiciii_demo.cptevents' c
+LEFT JOIN 'physionet-data.mimiciii_demo.diagnoses_icd' d
+ON c.SUBJECT_ID=d.SUBJECT_ID and d.ICD9_CODE='42731'
+WHERE c.CHARTDATE IS NOT null
+ORDER BY c.SUBJECT_ID, c.CHARTDATE
+```
 
 ##### diagnosisCode.csv Query
-SELECT * FROM `physionet-data.mimiciii_demo.diagnoses_icd` 
+`SELECT * FROM 'physionet-data.mimiciii_demo.diagnoses_icd'` 
 
 ##### mimiciiiDemoData.csv Query
-SELECT * FROM `physionet-data.mimiciii_demo.admissions`
+`SELECT * FROM 'physionet-data.mimiciii_demo.admissions'`
 
 ### RESULTS
 
