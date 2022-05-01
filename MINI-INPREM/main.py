@@ -17,6 +17,7 @@ from Loss import UncertaintyLoss
 
 ''' IMPORTS by NW and DGS: '''
 import pandas as pd
+import random
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 import math
@@ -86,6 +87,8 @@ def args():
     return parser
 
 def monto_calo_test(net, seq, mask, T):
+    N = 3
+
     out, aleatoric = None, None
     outputs = []
     for i in range(T):
@@ -93,14 +96,14 @@ def monto_calo_test(net, seq, mask, T):
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         out_instance = net(seq, mask)
-        aleatoric = out_instance[:, 2:]
+        aleatoric = out_instance[:, N:]
         if i == 0:
-            out = F.softmax(out_instance[:, :2], dim=1)
-            outputs.append(F.softmax(out_instance[:, :2], dim=1).cpu().detach().numpy())
+            out = F.softmax(out_instance[:, :N], dim=1)
+            outputs.append(F.softmax(out_instance[:, :N], dim=1).cpu().detach().numpy())
         else:
-            out = out + F.softmax(out_instance[:, :2], dim=1)
-            aleatoric = aleatoric + out_instance[:, 2:]
-            outputs.append(F.softmax(out_instance[:, :2], dim=1).cpu().detach().numpy())
+            out = out + F.softmax(out_instance[:, :N], dim=1)
+            aleatoric = aleatoric + out_instance[:, N:]
+            outputs.append(F.softmax(out_instance[:, :N], dim=1).cpu().detach().numpy())
     out = out / T
     aleatoric = aleatoric / T
     epistemic = -torch.sum(out * torch.log(out), dim=1)
@@ -282,6 +285,7 @@ def training(opts, net, train_set, valid_set, model_path):
 
             optimizer.zero_grad()
             out = net(x, mask)
+            #out, aleatoric, epistemic, outputs = monto_calo_test(net, x, mask, opts.monto_carlo_for_epistemic)
             loss = criterion(out, y)
             loss.backward()
             optimizer.step()
@@ -296,6 +300,7 @@ def training(opts, net, train_set, valid_set, model_path):
         valid_loss = 0.0
         for (v_x, v_mask, v_y) in valid_loader:
             voutputs = net(v_x, v_mask)
+            #voutputs, aleatoric, epistemic, outputs = monto_calo_test(net, v_x, v_mask, opts.monto_carlo_for_epistemic)
             vloss = criterion(voutputs, v_y)
             valid_loss += vloss
 
