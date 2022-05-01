@@ -116,9 +116,10 @@ where c.CHARTDATE is not null
 order by c.SUBJECT_ID, c.CHARTDATE
 
 ##### diagnosisCode.csv Query
-
+SELECT * FROM `physionet-data.mimiciii_demo.diagnoses_icd` 
 
 ##### mimiciiiDemoData.csv Query
+SELECT * FROM `physionet-data.mimiciii_demo.admissions`
 
 ### RESULTS
 
