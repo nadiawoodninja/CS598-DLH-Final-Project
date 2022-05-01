@@ -138,6 +138,7 @@ NW:
 - wrangling of heart dataset to be usable with our code (created heart csv file)
 - Epoch loop for selecting loss function, selecting optimizer, and training model
 - Fixed shape and value mismatch with accuracy reporting
+- Added monto_calo_test in the test/validation phases
 
 DGS:
 - Initial pseudocode for dataset loading and for training (later replaced by actual code)
@@ -151,10 +152,6 @@ DGS:
     in the paper it is also mentioned that p_k = 0.5 , T_mc = 50 and T_test = 100
     not sure where these numbers will come in handy but adding a note just incase
     and also stacked multihead attention is stacked 2 times.
-
-    ALSO where should we include this (TODO)
-    # In valid and test phase, you should use the monto_calo_test()
-    # monto_calo_test(net, input, mask, opts.monto_carlo_for_epistemic)
 ''' 
 def main(opts):
 
