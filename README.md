@@ -106,13 +106,19 @@ Then, to get the dataset specific to medical visit codes, we used:
 <br>`SELECT  * FROM physionet-data.mimiciii_demo.admissions`
 
 Next, to get the dataset specific to heart failure disease, we used:
-<br> 
+<br><br> 
+##### HeartFinalDataset.csv Query
+
 select c.SUBJECT_ID, c.CHARTDATE, c.CPT_CD, case when d.ICD9_CODE is null then 0 else 1 end as HAS_DIAG
 from `physionet-data.mimiciii_demo.cptevents` c
 left join `physionet-data.mimiciii_demo.diagnoses_icd` d on c.SUBJECT_ID=d.SUBJECT_ID and d.ICD9_CODE='42731'
 where c.CHARTDATE is not null
 order by c.SUBJECT_ID, c.CHARTDATE
 
+##### diagnosisCode.csv Query
+
+
+##### mimiciiiDemoData.csv Query
 
 ### RESULTS
 
