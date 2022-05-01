@@ -156,6 +156,10 @@ A detailed report is avaiable here=> [Data Profiling Report](https://htmlpreview
 
 ![image](https://user-images.githubusercontent.com/50491061/166164871-2d7a123f-d3de-4ec9-8b37-1073bdd55262.png)
 
+Alerts for the dataset that was used to train the model. High cerdinality and duplicate rows were found in the dataset.
+
+![image](https://user-images.githubusercontent.com/50491061/166165217-8806d936-589b-4f29-90b5-1ed5f1cc381b.png)
+
 
 ### Results
 
