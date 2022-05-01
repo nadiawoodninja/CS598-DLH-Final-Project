@@ -1,5 +1,6 @@
 # CS598 DLH Final Project Spring 2022
-## Nadia Wood (nadiaw2) and Diana Gonzalez Santillan (dianag4)
+> ### Project Team members
+>  Nadia Wood (nadiaw2) and Diana Gonzalez Santillan (dianag4)
 
 ### Citations
 
@@ -135,19 +136,22 @@ ORDER BY c.SUBJECT_ID, c.CHARTDATE
 ### Data Profiling and Stats - Understanding the Data 
 
 ---
-*** Mimiciii Demo Admissions Data Stats
+
+**Mimiciii Demo Admissions Data Stats**
 
 mimiciiiDemoData.csv contains demo data from the **table** mimiciii_demo.admissions. Using panda-profiling we were quickly able to get a sense of the data and statistics about this dataset. A detailed report is avaiable here=> [Data Profiling Report](https://htmlpreview.github.io/?https://github.com/nadiawoodninja/CS598DLHFinalProject/blob/main/mimiciiiDemoDataStats.html)
 
 ![image](https://user-images.githubusercontent.com/50491061/166164466-87322015-9591-4379-b3e9-3e2db6b08443.png)
 
 
-*** Diagnosis Code Data Stats
+**Diagnosis Code Data Stats**
+
 A detailed report is avaiable here=> [Data Profiling Report](https://htmlpreview.github.io/?https://github.com/nadiawoodninja/CS598DLHFinalProject/blob/main/DiagnosisCodeDataStats.html)
 
 ![image](https://user-images.githubusercontent.com/50491061/166164810-646bccdc-4d8d-4d86-9a2f-85146439679f.png)
 
-*** Heart Disease Data Stats
+**Heart Disease Data Stats**
+
 A detailed report is avaiable here=> [Data Profiling Report](https://htmlpreview.github.io/?https://github.com/nadiawoodninja/CS598DLHFinalProject/blob/main/HeartDiseaseDataStats.html)
 
 ![image](https://user-images.githubusercontent.com/50491061/166164871-2d7a123f-d3de-4ec9-8b37-1073bdd55262.png)
