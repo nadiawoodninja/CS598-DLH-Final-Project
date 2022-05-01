@@ -133,6 +133,7 @@ NW:
 - General dataset loading and overall data setup -- InpremData class
 - wrangling of heart dataset to be usable with our code (created heart csv file)
 - Epoch loop for selecting loss function, selecting optimizer, and training model
+- Fixed shape and value mismatch with accuracy reporting
 
 DGS:
 - Initial pseudocode for dataset loading and for training (later replaced by actual code)
@@ -318,11 +319,21 @@ def evaluate(net, test_set, model_path):
     net.eval()
     total = 0
     running_accuracy = 0
+    #y_size_shown = False
     for (x, mask, y) in test_loader: 
-        y = y.to(torch.float32) 
+        y = y.flatten() != 0
         predicted_outputs = net(x,mask)
-        _, predicted = torch.max(predicted_outputs, 1) 
-        total += y.size(0) 
+        _, predicted = torch.max(predicted_outputs, 1)
+        predicted = predicted != 0
+        total += y.size(0)
+
+        #if not y_size_shown:
+        #    y_size_shown = True
+        #    print(y)
+        #    print(predicted)
+        #    print(y.size(0))
+        #    print(y.shape)
+        #    print((predicted == y))
         running_accuracy += (predicted == y).sum().item() 
 
     print("Accuracy: " + str(100 * running_accuracy / total))
