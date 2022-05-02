@@ -164,8 +164,19 @@ Alerts for the dataset that was used to train the model. High cerdinality and du
 ### Results
 
 ---
+Model analysis results are in the folder=>[Results](https://github.com/nadiawoodninja/CS598DLHFinalProject/tree/main/output_for_analysis_final)
 
-TODO -- include table of results!
+|Epocs|	Batch Size |	Drop Rate |	Learning Rate |	Weight Decay | Accuracy |	F1 Score |
+|-----|------------|------------|---------------|--------------|----------|----------|						
+|5|	32|	0.5|	0.0005|	0.0001|	43%	|0.33|
+|10|	32|	0.5|	0.0005|	0.0001|	86%|	0.89|
+|15|	32|	0.5|	0.0005|	0.0001|	71%	|0.75|
+|20|	32|	0.5|	0.0005|	0.0001|	57%	|0.73|
+|25|	32|	0.5|	0.0005|	0.0001|	57%	|0.67|
+|30|	32|	0.5|	0.0005|	0.0001|	57%	|0.40|
+
+
+
 
 ### Appendix: Communication with Authors
 
