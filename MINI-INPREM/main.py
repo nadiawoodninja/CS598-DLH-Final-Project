@@ -15,6 +15,7 @@ import torch.nn.functional as F
 from doctor.model import Inprem
 from Loss import UncertaintyLoss
 
+
 ''' IMPORTS by NW and DGS: '''
 import pandas as pd
 import random
@@ -22,6 +23,9 @@ from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 import math
 from datetime import datetime
+import torchmetrics
+from torchmetrics import F1Score
+from os.path import exists
 
 # diagnoses bestsetting batch 32 lr 0.0005 l2 0.0001 drop 0.5 emb 256 starval 50 end val 65
 def args():
@@ -174,7 +178,16 @@ def main(opts):
     ''' NOTE: at this point we will have saved the best pretrained model in model_path '''
 
     ''' test (saved) model '''
-    evaluate(net, test_set, model_path)
+    acc, f_score = evaluate(net, test_set, model_path)
+
+    file_name = '../output_for_analysis_final/modelAnalysis.csv'
+    needs_header = not exists(file_name)
+
+    if needs_header:
+        f = open(file_name, 'w')
+        f.write('Epocs,Batch Size,Drop Rate,Learning Rate,Weight Decay,Accuracy,F1 Score\n')
+    f = open(file_name, 'a')
+    f.write(f"{opts.epochs},{opts.batch_size},{opts.drop_rate},{opts.lr},{opts.weight_decay},{acc},{f_score}\n")
 
     return
 
@@ -192,7 +205,7 @@ def preprocessing(task, data_root):
         return None
 
     ''' load the data '''
-    # TODO - data wrangling for diagnoses dataset (below works for heart)
+    
     load_data = pd.read_csv(DATA_PATH + data_csv).drop_duplicates().sort_values(by=['SUBJECT_ID', 'CHARTDATE'])
     codes = load_data['CPT_CD'].drop_duplicates()
     load_data_by_subject = load_data.groupby('SUBJECT_ID').count()
@@ -323,6 +336,9 @@ def evaluate(net, test_set, model_path):
     net.eval()
     total = 0
     running_accuracy = 0
+    metric = torchmetrics.Accuracy()
+    f1 = F1Score(num_classes=1, multiclass=False)
+
     #y_size_shown = False
     for (x, mask, y) in test_loader: 
         y = y.flatten() != 0
@@ -333,14 +349,26 @@ def evaluate(net, test_set, model_path):
 
         #if not y_size_shown:
         #    y_size_shown = True
-        #    print(y)
-        #    print(predicted)
+        print(y)
+        print(predicted)
         #    print(y.size(0))
         #    print(y.shape)
         #    print((predicted == y))
         running_accuracy += (predicted == y).sum().item() 
+        acc = metric(predicted, y)
 
+        
+        f1(predicted, y)
+
+   
     print("Accuracy: " + str(100 * running_accuracy / total))
+    acc = metric.compute()
+    f_score=f1.compute()
+    print(f"Accuracy on all data: {acc}")
+    print(f"F1 Score on all data: {f_score}")
+    metric.reset()
+    return acc, f_score
+    
 
 ''' main method for executable '''
 if __name__ == '__main__':
