@@ -164,6 +164,8 @@ Alerts for the dataset that was used to train the model. High cerdinality and du
 ### Results
 
 ---
+**Data for training model:** We split subject IDs into 3 groups (75% train, 10% valid, 15% test)
+
 Model analysis results are in the folder=>[Results](https://github.com/nadiawoodninja/CS598DLHFinalProject/tree/main/output_for_analysis_final)
 
 |Epocs|	Batch Size |	Drop Rate |	Learning Rate |	Weight Decay | Accuracy |	F1 Score |
