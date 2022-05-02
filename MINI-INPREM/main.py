@@ -26,6 +26,8 @@ from datetime import datetime
 import torchmetrics
 from torchmetrics import F1Score
 from os.path import exists
+from torchsummary import summary
+from torch.utils.tensorboard import SummaryWriter
 
 # diagnoses bestsetting batch 32 lr 0.0005 l2 0.0001 drop 0.5 emb 256 starval 50 end val 65
 def args():
@@ -188,6 +190,8 @@ def main(opts):
         f.write('Epocs,Batch Size,Drop Rate,Learning Rate,Weight Decay,Accuracy,F1 Score\n')
     f = open(file_name, 'a')
     f.write(f"{opts.epochs},{opts.batch_size},{opts.drop_rate},{opts.lr},{opts.weight_decay},{acc},{f_score}\n")
+    
+    print(net)
 
     return
 
