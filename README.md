@@ -178,7 +178,64 @@ Model analysis results are in the folder=>[Results](https://github.com/nadiawood
 |30|	32|	0.5|	0.0005|	0.0001|	57%	|0.40|
 
 
-
+#### Model Visualization
+```sh
+Inprem(
+  (embedding): Linear(in_features=2, out_features=128, bias=False)
+  (position_embedding): Embedding(35, 128)
+  (encoder): Encoder(
+    (layer_stack): ModuleList(
+      (0): EncoderLayer(
+        (slf_attn): MultiHeadAttention(
+          (w_qs): Linear(in_features=128, out_features=256, bias=True)
+          (w_ks): Linear(in_features=128, out_features=256, bias=True)
+          (w_vs): Linear(in_features=128, out_features=256, bias=True)
+          (attention): ScaledDotProductAttention(
+            (dropout): Dropout(p=0.5, inplace=False)
+            (softmax): Softmax(dim=2)
+          )
+          (layer_norm): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
+          (fc): Linear(in_features=256, out_features=128, bias=True)
+          (dropout): Dropout(p=0.5, inplace=False)
+        )
+        (pos_ffn): PositionwiseFeedForward(
+          (w_1): Conv1d(128, 128, kernel_size=(1,), stride=(1,))
+          (w_2): Conv1d(128, 128, kernel_size=(1,), stride=(1,))
+          (layer_norm): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
+          (dropout): Dropout(p=0.5, inplace=False)
+        )
+      )
+      (1): EncoderLayer(
+        (slf_attn): MultiHeadAttention(
+          (w_qs): Linear(in_features=128, out_features=256, bias=True)
+          (w_ks): Linear(in_features=128, out_features=256, bias=True)
+          (w_vs): Linear(in_features=128, out_features=256, bias=True)
+          (attention): ScaledDotProductAttention(
+            (dropout): Dropout(p=0.5, inplace=False)
+            (softmax): Softmax(dim=2)
+          )
+          (layer_norm): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
+          (fc): Linear(in_features=256, out_features=128, bias=True)
+          (dropout): Dropout(p=0.5, inplace=False)
+        )
+        (pos_ffn): PositionwiseFeedForward(
+          (w_1): Conv1d(128, 128, kernel_size=(1,), stride=(1,))
+          (w_2): Conv1d(128, 128, kernel_size=(1,), stride=(1,))
+          (layer_norm): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
+          (dropout): Dropout(p=0.5, inplace=False)
+        )
+      )
+    )
+  )
+  (w_alpha_1): Linear(in_features=128, out_features=1, bias=True)
+  (w_alpha_2): Linear(in_features=128, out_features=1, bias=True)
+  (w_beta): Linear(in_features=128, out_features=128, bias=True)
+  (variance): Linear(in_features=128, out_features=1, bias=True)
+  (predict): Linear(in_features=128, out_features=2, bias=True)
+  (dropout): Dropout(p=0.5, inplace=False)
+  (sparsemax): Sparsemax()
+)
+```
 
 ### Appendix: Communication with Authors
 
