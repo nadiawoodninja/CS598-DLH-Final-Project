@@ -1,7 +1,10 @@
 # CS598 DLH Final Project Spring 2022
-## Nadia Wood (nadiaw2) and Diana Gonzalez Santillan (dianag4)
+> ### Project Team members
+>  Nadia Wood (nadiaw2) and Diana Gonzalez Santillan (dianag4)
 
 ### Citations
+
+---
 
 The code in this repository is an adaptation of the original code sent to us by Xianli Zhang through email (xlbryant@stu.xjtu.edu.cn), downloadable from this Google Drive folder:
 https://drive.google.com/file/d/1hfhM93zu_pc-SC2ppC6PTp5cFdfLjnsG/view?usp=sharing
@@ -10,27 +13,27 @@ Our work is based on a paper by Xianli Zhang et al. from Xi'an Jiaotong Universi
 
 <b>Zhang, Xianli, et al.</b> “INPREM: An Interpretable and Trustworthy Predictive Model for Healthcare.” Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, 2020, https://doi.org/10.1145/3394486.3403087
 
-### Running the code
+### Running the Code
+
+---
 
 #### Python version: Python3 
 #### IDE: Visual Studio Code 
 In order to run the code provided by the authors of the paper, we had to install the following dependencies. 
 We used Visual Studio Code to import the project, and then intalled the following required libraries:
-<br>
-<br>
-  `sudo pip3 install torch torchvision`
-<br>
-  `sudo pip3 install Cython`
-<br>
-  `sudo pip3 install torchsparseattn`
-<br>
-  `sudo pip3 install pandas`
+
+```sh
+sudo pip3 install torch torchvision
+sudo pip3 install Cython
+sudo pip3 install torchsparseattn
+sudo pip3 install pandas
+```
 
 Once the dependencies are installed you can run the preprocessing, training, and evaluation code by executing the follwing command:
-<br>
+```sh
 
-`python3 main.py --task=[TASK] --emb_dim=256 --d_k=256 --d_v=256 --d_inner=256`
-<br>
+python3 main.py --task=[TASK] --emb_dim=256 --d_k=256 --d_v=256 --d_inner=256
+```
 
 where `[TASK]` must be one of `diagnoses`, or `heart`. Note: Original code included diabetes and kidney disease tasks as well, but we have excluded that from our reproduction for simplicity.
 
@@ -96,23 +99,147 @@ Feel free to change any of the other hyperparameters to see the changes in the r
 
 NOTE: If you plan to use GPU computation, install CUDA: https://developer.nvidia.com/cuda-downloads and include the --use_cuda=True flag.
 
-### Open Datasets Used
+### Data Wrangling Phase of the Project 
 
-#### MIMIC III Demo Dataset
+---
+
+#### MIMIC III Demo Dataset from Google's BigQuery
 
 We used the publicly available MIMIC III dataset to acquire the diagnosis codes dataset, and the Heart Failure dataset needed for the project. Specifically, we followed these instructions to access the MIMIC III demo data: https://mimic.mit.edu/docs/gettingstarted/cloud/bigquery/ <br>
 
-Then, to get the dataset specific to medical visit codes, we used:
-<br>`SELECT  * FROM physionet-data.mimiciii_demo.admissions`
+Then, we used the following queries to get the specific datasets we needed for the project:
+<br>
 
-Next, to get the dataset specific to heart failure disease, we used:
-<br> TODO: which select here??
 
-### RESULTS
+##### To generate mimiciiiDemoData.csv we used the query below 
 
-TODO -- include table of results!
+`SELECT * FROM 'physionet-data.mimiciii_demo.admissions`
 
-### APPENDIX: Communication With Authors
+##### To generate diagnosisCode.csv we used the query below
+
+`SELECT * FROM 'physionet-data.mimiciii_demo.diagnoses_icd` 
+
+
+##### To generate HeartFinalDataset.csv we used the query below
+
+```
+SELECT c.SUBJECT_ID, c.CHARTDATE, c.CPT_CD, 
+CASE WHEN d.ICD9_CODE IS null THEN 0 ELSE 1 END AS HAS_DIAG
+FROM 'physionet-data.mimiciii_demo.cptevents' c
+LEFT JOIN 'physionet-data.mimiciii_demo.diagnoses_icd' d
+ON c.SUBJECT_ID=d.SUBJECT_ID and d.ICD9_CODE='42731'
+WHERE c.CHARTDATE IS NOT null
+ORDER BY c.SUBJECT_ID, c.CHARTDATE
+```
+
+
+### Data Profiling and Stats - Understanding the Data 
+
+---
+
+**Mimiciii Demo Admissions Data Stats**
+
+mimiciiiDemoData.csv contains demo data from the **table** mimiciii_demo.admissions. Using panda-profiling we were quickly able to get a sense of the data and statistics about this dataset. A detailed report is avaiable here=> [Data Profiling Report](https://htmlpreview.github.io/?https://github.com/nadiawoodninja/CS598DLHFinalProject/blob/main/mimiciiiDemoDataStats.html)
+
+![image](https://user-images.githubusercontent.com/50491061/166164466-87322015-9591-4379-b3e9-3e2db6b08443.png)
+
+
+**Diagnosis Code Data Stats**
+
+A detailed report is avaiable here=> [Data Profiling Report](https://htmlpreview.github.io/?https://github.com/nadiawoodninja/CS598DLHFinalProject/blob/main/DiagnosisCodeDataStats.html)
+
+![image](https://user-images.githubusercontent.com/50491061/166164810-646bccdc-4d8d-4d86-9a2f-85146439679f.png)
+
+**Heart Disease Data Stats**
+
+A detailed report is avaiable here=> [Data Profiling Report](https://htmlpreview.github.io/?https://github.com/nadiawoodninja/CS598DLHFinalProject/blob/main/HeartDiseaseDataStats.html)
+
+![image](https://user-images.githubusercontent.com/50491061/166164871-2d7a123f-d3de-4ec9-8b37-1073bdd55262.png)
+
+Alerts for the dataset that was used to train the model. High cerdinality and duplicate rows were found in the dataset.
+
+![image](https://user-images.githubusercontent.com/50491061/166165217-8806d936-589b-4f29-90b5-1ed5f1cc381b.png)
+
+
+### Results
+
+---
+**Data for training model:** We split subject IDs into 3 groups (75% train, 10% valid, 15% test)
+
+Model analysis results are in the folder=>[Results](https://github.com/nadiawoodninja/CS598DLHFinalProject/tree/main/output_for_analysis_final)
+
+|Epocs|	Batch Size |	Drop Rate |	Learning Rate |	Weight Decay | Accuracy |	F1 Score |
+|-----|------------|------------|---------------|--------------|----------|----------|						
+|5|	32|	0.5|	0.0005|	0.0001|	43%	|0.33|
+|10|	32|	0.5|	0.0005|	0.0001|	86%|	0.89|
+|15|	32|	0.5|	0.0005|	0.0001|	71%	|0.75|
+|20|	32|	0.5|	0.0005|	0.0001|	57%	|0.73|
+|25|	32|	0.5|	0.0005|	0.0001|	57%	|0.67|
+|30|	32|	0.5|	0.0005|	0.0001|	57%	|0.40|
+
+
+#### Model Visualization
+```sh
+Inprem(
+  (embedding): Linear(in_features=2, out_features=128, bias=False)
+  (position_embedding): Embedding(35, 128)
+  (encoder): Encoder(
+    (layer_stack): ModuleList(
+      (0): EncoderLayer(
+        (slf_attn): MultiHeadAttention(
+          (w_qs): Linear(in_features=128, out_features=256, bias=True)
+          (w_ks): Linear(in_features=128, out_features=256, bias=True)
+          (w_vs): Linear(in_features=128, out_features=256, bias=True)
+          (attention): ScaledDotProductAttention(
+            (dropout): Dropout(p=0.5, inplace=False)
+            (softmax): Softmax(dim=2)
+          )
+          (layer_norm): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
+          (fc): Linear(in_features=256, out_features=128, bias=True)
+          (dropout): Dropout(p=0.5, inplace=False)
+        )
+        (pos_ffn): PositionwiseFeedForward(
+          (w_1): Conv1d(128, 128, kernel_size=(1,), stride=(1,))
+          (w_2): Conv1d(128, 128, kernel_size=(1,), stride=(1,))
+          (layer_norm): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
+          (dropout): Dropout(p=0.5, inplace=False)
+        )
+      )
+      (1): EncoderLayer(
+        (slf_attn): MultiHeadAttention(
+          (w_qs): Linear(in_features=128, out_features=256, bias=True)
+          (w_ks): Linear(in_features=128, out_features=256, bias=True)
+          (w_vs): Linear(in_features=128, out_features=256, bias=True)
+          (attention): ScaledDotProductAttention(
+            (dropout): Dropout(p=0.5, inplace=False)
+            (softmax): Softmax(dim=2)
+          )
+          (layer_norm): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
+          (fc): Linear(in_features=256, out_features=128, bias=True)
+          (dropout): Dropout(p=0.5, inplace=False)
+        )
+        (pos_ffn): PositionwiseFeedForward(
+          (w_1): Conv1d(128, 128, kernel_size=(1,), stride=(1,))
+          (w_2): Conv1d(128, 128, kernel_size=(1,), stride=(1,))
+          (layer_norm): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
+          (dropout): Dropout(p=0.5, inplace=False)
+        )
+      )
+    )
+  )
+  (w_alpha_1): Linear(in_features=128, out_features=1, bias=True)
+  (w_alpha_2): Linear(in_features=128, out_features=1, bias=True)
+  (w_beta): Linear(in_features=128, out_features=128, bias=True)
+  (variance): Linear(in_features=128, out_features=1, bias=True)
+  (predict): Linear(in_features=128, out_features=2, bias=True)
+  (dropout): Dropout(p=0.5, inplace=False)
+  (sparsemax): Sparsemax()
+)
+```
+
+### Appendix: Communication with Authors
+
+---
 
 <img width="1133" alt="1" src="https://user-images.githubusercontent.com/80500914/166115836-37eba716-438c-4a97-9e4e-ab3bb3aafb24.png">
 <img width="1041" alt="2" src="https://user-images.githubusercontent.com/80500914/166115851-01c83462-dda4-4b9e-b26f-e6b125b5beb9.png">

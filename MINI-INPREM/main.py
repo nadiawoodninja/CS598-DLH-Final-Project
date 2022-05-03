@@ -15,12 +15,19 @@ import torch.nn.functional as F
 from doctor.model import Inprem
 from Loss import UncertaintyLoss
 
+
 ''' IMPORTS by NW and DGS: '''
 import pandas as pd
+import random
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 import math
 from datetime import datetime
+import torchmetrics
+from torchmetrics import F1Score
+from os.path import exists
+from torchsummary import summary
+from torch.utils.tensorboard import SummaryWriter
 
 # diagnoses bestsetting batch 32 lr 0.0005 l2 0.0001 drop 0.5 emb 256 starval 50 end val 65
 def args():
@@ -70,7 +77,8 @@ def args():
                         help='Weather capture uncertainty.', default=True)
     parser.add_argument('--monto_carlo_for_aleatoric', type=int, default=100,
                         help='The size of Monto Carlo Sample.')
-    parser.add_argument('--monto_carlo_for_epistemic', type=int, default=200,
+    # Note: Previous monto_carlo_for_epistemic default was 200 (significantly increases epoch time)
+    parser.add_argument('--monto_carlo_for_epistemic', type=int, default=10,
                         help='The size of Monto Carlo Sample.')
     parser.add_argument('--analysis_dir', type=str, default='../output_for_analysis_final/',
                         help='Set the analysis output dir')
@@ -86,6 +94,8 @@ def args():
     return parser
 
 def monto_calo_test(net, seq, mask, T):
+    N = 3
+
     out, aleatoric = None, None
     outputs = []
     for i in range(T):
@@ -93,14 +103,14 @@ def monto_calo_test(net, seq, mask, T):
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         out_instance = net(seq, mask)
-        aleatoric = out_instance[:, 2:]
+        aleatoric = out_instance[:, N:]
         if i == 0:
-            out = F.softmax(out_instance[:, :2], dim=1)
-            outputs.append(F.softmax(out_instance[:, :2], dim=1).cpu().detach().numpy())
+            out = F.softmax(out_instance[:, :N], dim=1)
+            outputs.append(F.softmax(out_instance[:, :N], dim=1).cpu().detach().numpy())
         else:
-            out = out + F.softmax(out_instance[:, :2], dim=1)
-            aleatoric = aleatoric + out_instance[:, 2:]
-            outputs.append(F.softmax(out_instance[:, :2], dim=1).cpu().detach().numpy())
+            out = out + F.softmax(out_instance[:, :N], dim=1)
+            aleatoric = aleatoric + out_instance[:, N:]
+            outputs.append(F.softmax(out_instance[:, :N], dim=1).cpu().detach().numpy())
     out = out / T
     aleatoric = aleatoric / T
     epistemic = -torch.sum(out * torch.log(out), dim=1)
@@ -133,6 +143,8 @@ NW:
 - General dataset loading and overall data setup -- InpremData class
 - wrangling of heart dataset to be usable with our code (created heart csv file)
 - Epoch loop for selecting loss function, selecting optimizer, and training model
+- Fixed shape and value mismatch with accuracy reporting
+- Added monto_calo_test in the test/validation phases
 
 DGS:
 - Initial pseudocode for dataset loading and for training (later replaced by actual code)
@@ -146,10 +158,6 @@ DGS:
     in the paper it is also mentioned that p_k = 0.5 , T_mc = 50 and T_test = 100
     not sure where these numbers will come in handy but adding a note just incase
     and also stacked multihead attention is stacked 2 times.
-
-    ALSO where should we include this (TODO)
-    # In valid and test phase, you should use the monto_calo_test()
-    # monto_calo_test(net, input, mask, opts.monto_carlo_for_epistemic)
 ''' 
 def main(opts):
 
@@ -172,7 +180,18 @@ def main(opts):
     ''' NOTE: at this point we will have saved the best pretrained model in model_path '''
 
     ''' test (saved) model '''
-    evaluate(net, test_set, model_path)
+    acc, f_score = evaluate(net, test_set, model_path)
+
+    file_name = '../output_for_analysis_final/modelAnalysis.csv'
+    needs_header = not exists(file_name)
+
+    if needs_header:
+        f = open(file_name, 'w')
+        f.write('Epocs,Batch Size,Drop Rate,Learning Rate,Weight Decay,Accuracy,F1 Score\n')
+    f = open(file_name, 'a')
+    f.write(f"{opts.epochs},{opts.batch_size},{opts.drop_rate},{opts.lr},{opts.weight_decay},{acc},{f_score}\n")
+    
+    print(net)
 
     return
 
@@ -190,7 +209,7 @@ def preprocessing(task, data_root):
         return None
 
     ''' load the data '''
-    # TODO - data wrangling for diagnoses dataset (below works for heart)
+    
     load_data = pd.read_csv(DATA_PATH + data_csv).drop_duplicates().sort_values(by=['SUBJECT_ID', 'CHARTDATE'])
     codes = load_data['CPT_CD'].drop_duplicates()
     load_data_by_subject = load_data.groupby('SUBJECT_ID').count()
@@ -272,6 +291,7 @@ def training(opts, net, train_set, valid_set, model_path):
     ''' run epochs '''
     for epoch in range(0, opts.epochs): #default is 25 epochs,we can use --epochs option to change it
         print('\nEpoch ' + str(epoch+1) + ' of ' + str(opts.epochs))
+        #print('.', end='', flush=True)
         
         ''' train model '''
         print("TRAINING")
@@ -280,7 +300,8 @@ def training(opts, net, train_set, valid_set, model_path):
         for (x, mask, y) in train_loader:
 
             optimizer.zero_grad()
-            out = net(x, mask)
+            #out = net(x, mask)
+            out, aleatoric, epistemic, outputs = monto_calo_test(net, x, mask, opts.monto_carlo_for_epistemic)
             loss = criterion(out, y)
             loss.backward()
             optimizer.step()
@@ -294,7 +315,8 @@ def training(opts, net, train_set, valid_set, model_path):
         net.train(False)
         valid_loss = 0.0
         for (v_x, v_mask, v_y) in valid_loader:
-            voutputs = net(v_x, v_mask)
+            #voutputs = net(v_x, v_mask)
+            voutputs, aleatoric, epistemic, outputs = monto_calo_test(net, v_x, v_mask, opts.monto_carlo_for_epistemic)
             vloss = criterion(voutputs, v_y)
             valid_loss += vloss
 
@@ -318,14 +340,39 @@ def evaluate(net, test_set, model_path):
     net.eval()
     total = 0
     running_accuracy = 0
-    for (x, mask, y) in test_loader: 
-        y = y.to(torch.float32) 
-        predicted_outputs = net(x,mask)
-        _, predicted = torch.max(predicted_outputs, 1) 
-        total += y.size(0) 
-        running_accuracy += (predicted == y).sum().item() 
+    metric = torchmetrics.Accuracy()
+    f1 = F1Score(num_classes=1, multiclass=False)
 
+    #y_size_shown = False
+    for (x, mask, y) in test_loader: 
+        y = y.flatten() != 0
+        predicted_outputs = net(x,mask)
+        _, predicted = torch.max(predicted_outputs, 1)
+        predicted = predicted != 0
+        total += y.size(0)
+
+        #if not y_size_shown:
+        #    y_size_shown = True
+        print(y)
+        print(predicted)
+        #    print(y.size(0))
+        #    print(y.shape)
+        #    print((predicted == y))
+        running_accuracy += (predicted == y).sum().item() 
+        acc = metric(predicted, y)
+
+        
+        f1(predicted, y)
+
+   
     print("Accuracy: " + str(100 * running_accuracy / total))
+    acc = metric.compute()
+    f_score=f1.compute()
+    print(f"Accuracy on all data: {acc}")
+    print(f"F1 Score on all data: {f_score}")
+    metric.reset()
+    return acc, f_score
+    
 
 ''' main method for executable '''
 if __name__ == '__main__':
