@@ -20,13 +20,16 @@ Our work is based on a paper by Xianli Zhang et al. from Xi'an Jiaotong Universi
 #### Python version: Python3 
 #### IDE: Visual Studio Code 
 In order to run the code provided by the authors of the paper, we had to install the following dependencies. 
-We used Visual Studio Code to import the project, and then intalled the following required libraries:
+We used Visual Studio Code to import the project, and then installed the following required libraries:
 
 ```sh
 sudo pip3 install torch torchvision
 sudo pip3 install Cython
 sudo pip3 install torchsparseattn
 sudo pip3 install pandas
+sudo pip3 install torchmetrics
+sudo pip3 install torchsummary
+sudo pip3 install tensorboard
 ```
 
 Once the dependencies are installed you can run the preprocessing, training, and evaluation code by executing the follwing command:
