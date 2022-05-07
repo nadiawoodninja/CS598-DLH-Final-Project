@@ -1,6 +1,9 @@
 # CS598 DLH Final Project Spring 2022
 > ### Project Team members
 >  Nadia Wood (nadiaw2) and Diana Gonzalez Santillan (dianag4)
+>  Presentation Link: https://www.youtube.com/watch?v=1m-L98yigJM <br>
+>  Silde Deck: https://github.com/nadiawoodninja/CS598DLHFinalProject/blob/main/CS598-DLH-Spring2022.pdf <br>
+>  Paper: https://github.com/nadiawoodninja/CS598DLHFinalProject/blob/main/Reproducibility_Project_Instructions_for_CS598_DL4H_in_Spring_2022.pdf
 
 ### Citations
 
