@@ -1,6 +1,6 @@
-# CS598 DLH Final Project Spring 2022
-> ### Project Team members
->  Nadia Wood (nadiaw2) and Diana Gonzalez Santillan (dianag4)
+# Deep Learning in Healthcare: Reproducibility of a Predictive Model for Healthcare
+
+>  Nadia Wood and Diana Gonzalez Santillan
 
 
 ### Links 
